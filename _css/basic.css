@@ -18,7 +18,7 @@ nav li {
 }
 
 nav li a {
-  color: #004de6;
+  color: #1d1f21;
   text-decoration: none;
   font-size: 18px;
   font-weight: bold;
@@ -30,7 +30,6 @@ nav li a {
   padding-bottom: 5px;
   margin-left: 7px;
   margin-right: 7px;
-  border-bottom: 2px solid #4c9cf1;
   transition: color 0.3s ease;
 }
 
