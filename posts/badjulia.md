@@ -9,7 +9,13 @@ This post is about all the major disadvantages of Julia. Some it will just be ra
 \tableofcontents
 
 ## Compile time latency
-The very first thing you learn about Julia is that it's unresponsive. You open the REPL, type in something trivial like `julia> sin(0.96^5)`, and see a _noticable_ lag before the answer appears. As far as first impressions go, that isn't exactly great, especially for a language touted for its speed.
+The very first thing you learn about Julia is that it's unresponsive. You open the REPL, type in something trivial like:
+
+```julia
+julia> sin(0.96^5)
+```
+
+and see a _noticable_ lag before the answer appears. As far as first impressions go, that isn't exactly great, especially for a language touted for its speed.
 
 What's happening is that Julia is compiling `sin` - and also much of the code related to the REPL itself - first time you use it. This causes the lag we call _compile time latency_. Hence, the effect is even larger if we pull in new code from external packages: A small script that uses the packages `BioSequences` and `FASTX` may have a 2 second latency, even if the computation itself takes microseconds.
 
@@ -43,6 +49,41 @@ Another consequence of Julia's massive runtime is that it makes it annoying to c
 
 Compare this to a static language like C, where you can compile a C lib to a binary that other programs simply calls into. Julians are usually very proud of the large amount of code sharing and code reuse in the Julia community, but it's worth noting that this sharing stops abruptly at the language barrier: We might be able to use a Rust library, but no-one would use a Julia library if they could avoid it. So if you want to code up some universally used library, you better go with a static language.
 
+## Weak static analysis
+This is one point where I've changed perspective after having tried coding Rust. Before learning Rust, when I only knew Python and Julia I would have said something like:
+
+> Sure, static typing is useful. But to ensure program correctness, you need tests anyway, and these tests will catch the vast majority of what would be compile-time errors. The small safety you lose in a dynamic language is more than made up by the time saved, which you can use to write better tests.
+
+How silly, past me, if only you knew! See, I taught myself Rust by doing the [Advent of Code 2020](https://github.com/jakobnissen/advent2020) in Rust. Being a neophyte, I was so bad at Rust that I had more than one compiler error per line of code on average. _Everything_ was hard. And yet, for about two-thirds of the challenges, the _first_ time the program compiled, it gave the correct answer.
+
+That was astounding to me. Working with Python or Julia, I expected the program to crash. Programs always crash at first, right? Well, they do in Julia until you've found the bugs by hitting them, and fixed them one by one. In fact, for me it was part of the development workflow, iteratatively write the solution, run it, watch where it crashes, fix it, repeat. The idea that you could just write the right program on the first try was wild. The experience was _not_ that I bought extra safety that I paid for with developer time. It was that it _just worked_, because I had gotten all the errors at compile time.
+
+And this was for small scripts. I can only imagine the productivity boots that static analysis gives you for larger projects when you can safely refactor, because you know immediately if you do something wrong.
+
+Back to Julia: It lies somewhere in between Python and Rust in terms of static analysis and safety. You _can_ add type annotations to your functions, but the errors still only appear at runtime, and it's generally considered un-idiomatic to use too many type annotations. [Linting](https://github.com/julia-vscode/StaticLint.jl) and [static analysis](https://github.com/aviatesk/JET.jl) for Julia are slowly appearing and improving, but compared to Rust they catch just a small fraction of errors. When writing generic package code where types are mostly indeterminate, they are close to useless.
+
+I'm a big fan of these tools in Julia, but honestly, in their current state, you can rely on the linter to catch typos or wrong type signatures, and on the static analyzer to analyze specific function calls you ask it to... but that's about it.
+
+## The core language is unstable
+Julia released 1.0 in 2018, and has been committed to no breakage since then. So how can I say the language is unstable?
+
+Instability isn't just about breaking changes. It's also about bugs and incorrect documentation. And here, Julia is pretty bad. Having used Julia since just before 1.0, I run into bugs in the core language regularly. Not often, but perhaps once every couple of months. I can't recall ever having run into a bug in Python.
+
+If you doubt it, take a look at the [open issues marked as bugs](https://github.com/JuliaLang/julia/issues?page=2&q=is%3Aissue+is%3Aopen+label%3Abug). Some of these are transient bugs on master, but there are _many_, _many_ old bugs you can still go in and trigger from the REPL on the stable Julia release. Here's one [I reported about a year ago](https://github.com/JuliaLang/julia/issues/36605), and which still hasn't been fixed:
+
+```julia
+julia> open(read, "/home/jakob/Documents") # yes, a directory
+UInt8[]
+```
+
+I don't think it's because the Julia devs are careless, or Julia isn't well tested. It's just a matter of bugs continuously being discovered because Julia is relatively young software. As it matures and stabilizes post 1.0, the number of bugs have gone down and will continue to do so in the future. But until it does, don't expect mature, stable software when using Julia.
+
+There is, however, also the issue of unstable performance, where Julia is a uniquely awkward situation. Dynamic languages are slow, and people using them write code expecting them to be slow. Static languages are fast, because the compiler has full type information during the compilation process. If the compiler can't infer the type of something, the program won't compile. Most notably, because an inference failure in static languages causes the compilation to fail, _the compiler's inference is part of the API, and must remain stable_. Not so in Julia.
+
+In Julia, what the compiler knows about your code and the optimizations it does is a pure implementation detail - at long as it produces the correct result. Even in situations where _nothing_ can be inferred about the types Julia will run and produce the correct result, just hundreds of times slower. That means that a compiler change that causes a failure of inference and a 100x performance regression is not a breaking change. So, these happens.
+
+I mean, don't get me wrong, they don't happen _often_, and they usually only affect part of your program, so the regression is rarely that dramatic. The Julia team really tries to avoid regressions like that, and they're usually picked up and fixed on the master branch of Julia before they make it to any release. Still, if you've maintained a few Julia packages, I bet it has happened to you more than once.
+
 ## The subtyping system works poorly
 * What IS an abstract type - semantics or interface?
  - if semantics, why? what does it give you? what guarantees? provide little benefit
@@ -52,8 +93,6 @@ Compare this to a static language like C, where you can compile a C lib to a bin
 * You get the good parts AND the bad ones. With traits, there will be more traits so people can pick and choose.
 
 ## The iterator protocol is awful
-
-## Weak static analysis
 
 ## Unstable language
 

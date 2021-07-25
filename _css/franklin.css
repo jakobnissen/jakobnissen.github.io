@@ -136,16 +136,22 @@ h6 {
 
 .franklin-content h1 a { color: inherit; text-decoration: none; }
 .franklin-content h1 a:hover { text-decoration: none; }
+.franklin-content h1 a:visited { color: inherit; text-decoration: none; }
 .franklin-content h2 a { color: inherit; text-decoration: none; }
 .franklin-content h2 a:hover { text-decoration: none; }
+.franklin-content h2 a:visited { color: inherit; text-decoration: none; }
 .franklin-content h3 a { color: inherit; text-decoration: none; }
 .franklin-content h3 a:hover { text-decoration: none; }
+.franklin-content h3 a:visited { color: inherit; text-decoration: none; }
 .franklin-content h4 a { color: inherit; text-decoration: none; }
 .franklin-content h4 a:hover { text-decoration: none; }
+.franklin-content h4 a:visited { color: inherit; text-decoration: none; }
 .franklin-content h5 a { color: inherit; }
 .franklin-content h5 a:hover { text-decoration: none; }
+.franklin-content h5 a:visited { color: inherit; text-decoration: none; }
 .franklin-content h6 a { color: inherit; }
 .franklin-content h6 a:hover { text-decoration: none; }
+.franklin-content h6 a:visited { color: inherit; text-decoration: none; }
 
 .franklin-content table {
   margin-left: auto;
