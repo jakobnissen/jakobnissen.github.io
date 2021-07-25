@@ -60,9 +60,9 @@ That was astounding to me. Working with Python or Julia, I expected the program 
 
 And this was for small scripts. I can only imagine the productivity boots that static analysis gives you for larger projects when you can safely refactor, because you know immediately if you do something wrong.
 
-Back to Julia: It lies somewhere in between Python and Rust in terms of static analysis and safety. You _can_ add type annotations to your functions, but the errors still only appear at runtime, and it's generally considered un-idiomatic to use too many type annotations. [Linting](https://github.com/julia-vscode/StaticLint.jl) and [static analysis](https://github.com/aviatesk/JET.jl) for Julia are slowly appearing and improving, but compared to Rust they catch just a small fraction of errors. When writing generic package code where types are mostly indeterminate, they are close to useless.
+Back to Julia: It lies somewhere in between Python and Rust in terms of static analysis and safety. You _can_ add type annotations to your functions, but the errors still only appear at runtime, and it's generally considered un-idiomatic to use too many type annotations. [Linting](https://github.com/julia-vscode/StaticLint.jl) and [static analysis](https://github.com/aviatesk/JET.jl) for Julia are slowly appearing and improving, but compared to Rust they catch just a small fraction of errors. When writing generic package code where types are mostly indeterminate until runtime, they are close to useless. Also, because writing un-inferrable code is a completely valid (if ineffient) coding style, there is a lot of code that simply can't be statically analysed.
 
-I'm a big fan of these tools in Julia, but honestly, in their current state, you can rely on the linter to catch typos or wrong type signatures, and on the static analyzer to analyze specific function calls you ask it to... but that's about it.
+I'm a big fan of these tools, but honestly, in their current state, you can rely on the linter to catch typos or wrong type signatures, and on the static analyzer to analyze specific function calls you ask it to... but that's about it.
 
 ## The core language is unstable
 Julia released 1.0 in 2018, and has been committed to no breakage since then. So how can I say the language is unstable?
@@ -85,12 +85,67 @@ In Julia, what the compiler knows about your code and the optimizations it does 
 I mean, don't get me wrong, they don't happen _often_, and they usually only affect part of your program, so the regression is rarely that dramatic. The Julia team really tries to avoid regressions like that, and they're usually picked up and fixed on the master branch of Julia before they make it to any release. Still, if you've maintained a few Julia packages, I bet it has happened to you more than once.
 
 ## The subtyping system works poorly
-* What IS an abstract type - semantics or interface?
- - if semantics, why? what does it give you? what guarantees? provide little benefit
- - if interface: poorly documented, no enforcement.
+This is the most controversial of my gripes with Julia. People who don't know Julia have no idea what I mean when I say the subtyping system is bad, and people who _do_ know Julia are unlikely to want to admit it. I'll give a brief recap of how the system works for anyone not familiar:
 
-* One-shot gun.
-* You get the good parts AND the bad ones. With traits, there will be more traits so people can pick and choose.
+In Julia, types can be either _abstract_ or _concrete_. Abstract types are considered "incomplete". They can have subtypes, but they cannot hold any data fields or be instantiated - they are incomplete, after all. Concrete types can be instantiated and may have data, but cannot be subtyped since they are final. Here is an imaginary example:
+
+```julia
+# Abstract type subtyping BioSequence (itself abstract)
+abstract type NucleotideSequence <: BioSequence end
+
+# Concrete types with fields subtyping NucleotideSequence
+# cannot be subtyped!
+struct DNASequence <: NucleotideSequence
+    x::Vector{DNA}
+end
+```
+
+You can define methods for abstract types, which are inherited by all its subtypes. But if a concrete type define the same method, that will overwrite the abstract one:
+
+```julia
+# Generic function, allocates and is slow
+function print(io::IO, seq::NucleotideSequence)
+    for i in seq
+        print(io, i)
+    end
+end
+
+# Specialized function, overwrites generic
+function print(io::IO, seq::DNASequence)
+    write(io, seq.x) # optimized write implementation
+end
+```
+
+So you can create type heiarchies, implement generic fallback methods, and overwrite them whenever you want. Neat! What's not to like? Well...
+
+### You can't extend existing types with data
+Say you implement some useful `MyType`. Another package thinks it's really neat and wants to extend the type. Too bad, that's just not possible - `MyType` is final and can't be extended. If the original author didn't add an abstract supertype for `MyType` you're out of luck. And in all probability, the author didn't. After all, why implement it if there was no need for it at the time?
+
+### Abstract interfaces are unenforced and undiscoverable
+Suppose, on the other hand, you find out the author _did_ actually add `AbstractMyType`. Then you can subtype it:
+
+```julia
+struct YourType <: AbstractMyType
+    [ stuff ]
+end
+```
+
+... and now what? What do you need to implement? What does the abstract type require and guarantee? Julia offers absolutely no way of finding out what the interface is, or how you conform to it. In fact, even in Base Julia, fundamental types like `AbstractSet`, `AbstractChannel`, `Number` and `AbstractFloat` are just not documented. What actually _is_ a `Number`, in Julia? Who knows? Do even the core developers know? I actually doubt it.
+
+A few abstract types in Julia _are_ well documented, most notably `AbstractArray` and its abstract subtypes, and it's probably no coindidence that Julia's array ecosystem is so good.
+
+Here is a fun challenge for anyone who thinks "it can't be that bad": Try to implement a `TwoWayDict`, an `AbstractDict` where if `d[a] = b`, then `d[b] = a`. In Python, which has inheritance, this is trivial. You simply subclass `dict`, overwrite a handful of its methods, and everything else works. In Julia, you have to define its data layout first (remember, you can't inherit data!), then figure out everything `AbstractDict` promises (good luck!) and implement that.
+
+### Subtyping is an all-or-nothing thing
+Another problem with relying on subtyping for behaviour is that each type can only have one supertype, and it inherits _all_ of its methods. Often, that turns out to not be what you want: New types often has properties of several interfaces: Perhaps they are set-like, iterable, callable, printable, etc. But no, says Julia, pick _one_ thing. To be fair, "iterable", "callable" and "printable" are so generic they are not implemented using subtyping in Julia - but doesn't that say something?
+
+In Rust, these properties are implemented through traits instead. Because each trait is defined independently, each type faces a smorgasbord of possibilities. It can choose _exactly_ what it can support, and nothing more. It also leads to more code reuse, as you can e.g. simply derive `Copy` and get it without having to implement it.
+
+Julia _does_ have traits, but they're half-baked, not supported on a language level, and haphazardly used. They are usually implemented through dispatch, which is also annoying since it can make it difficult to understand what is actually being called. Julia's broadcasting mechanism, for example, is controlled primarily through traits, and just finding the method ultimately being called is a pain.
+
+Also, since so much of Julia's behaviour is controlled through the type of variables instead of traits, people are tempted to use wrapper types if they want type `A` to be able to behave like type `B`. But those are [a terrible idea](https://github.com/JuliaLang/julia/issues/37790), since it only moves the problem and in fact makes it worse: You now have a new wrapper type you need to implement everything for, and even if you do, the wrapper type is now of type `B`, and doesn't have access to the methods of `A`!
+
+# Todo: Big Unions are a symptom of the system not working
 
 ## The iterator protocol is awful
 
@@ -119,7 +174,6 @@ but this is often not possible. You can't post-hoc inherit.
 - Example: Big unions, like SparseArrays._StridedOrTriangularMatrix
 
 ## Lack of static analysis
-* Having tried Rust, it's harder to defend.
 * Should be able to be added in a non-breaking way.
 * Even something simple as typos dont get caught
 * Coupled with latency, that's pretty annoying
