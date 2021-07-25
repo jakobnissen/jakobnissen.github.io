@@ -4,8 +4,8 @@
 
 :root {
   --block-background: #f8f8f8;
-  --small: 14px;
-  --normal: 19px;
+  --small: 12px;
+  --normal: 16px;
   --text-color: hsv(0, 0%, 20%);
 }
 
