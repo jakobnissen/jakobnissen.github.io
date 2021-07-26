@@ -1,6 +1,6 @@
 # About
 
-Hello, there! I'm Jakob. 
+Hello, there! I'm Jakob. This blog is about programming, mostly, and sometimes biology.
 
 ## How I got here
 When studying in university to become a molecular biologist, I discovered my love for programming during a course in bioinformatics. I became obsessed, and one year later began a PhD in bioinformatics where I could combine my two loves: Genomics and coding.
@@ -12,6 +12,8 @@ While Python was great and flexible, I spent the next year butting my head again
 In my desperate search for _good_ solutions, I stumbled upon Julia. I didn't like it in the beginning. It was too unlike Python - too _weird_. But boy, could it run fast. After seeing my own clumsy Julia code easily beat my optimized Cython, I tried to give Julia a shot. Eventually, the weirdness wore off and its underlying design beauty began to shine through to me.
 
 Much later, perhaps around early of 2020, I decided I needed to learn a statically compiled language to broaden my skills. I decided Rust would complement Julia well, as the two languages had wildly different design goals. So I gave Rust a go, and had to quit in frustration. Tried again later, and failed again, but somehow it stuck the third time. Unlike Julia, I instantly liked Rust, even when I felt too dumb for it. It was just _too well designed_ to not like. It had all the stuff I didn't like about Julia.
+
+Currently, I use Julia and Python on a daily basis at work, making scientific software.
 
 ## Software
 Besides this blog, I have made a few things, including:
