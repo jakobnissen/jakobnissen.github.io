@@ -1,7 +1,7 @@
 # What's bad about Julia?
 _Written 2021-07-25, updated {{fd_mtime_raw}}_
 
-Julia is my favorite programming language. More than that actually, perhaps I'm a bit of a fanboy. Sometimes, though, the ceaseless celebration of Julia by fans like me can be a bit too much. It papers over legitimate problems in the language, hindering progress. And from an outsider perspective, it's not only insufferable (I would guess), but also obfuscates the true pros and cons of the language. Learning why you may _not_ want to choose to use a tool is just as important as learning why you may.
+Julia is my favorite programming language. More than that actually, perhaps I'm a bit of a fanboy. Sometimes, though, the ceaseless celebration of Julia by fans like me can be a bit too much. It papers over legitimate problems in the language, hindering progress. And from an outsider perspective, it's not only insufferable (I would guess), but also obfuscates the true pros and cons of the language. [Learning why you may _not_ want to choose to use a tool](https://matklad.github.io/2020/09/20/why-not-rust.html) is just as important as learning why you may.
 
 This post is about all the major disadvantages of Julia. Some it will just be rants about things I particularly don't like - hopefuly they will be informative, too. A post like this is necessarily subjective. For example, some people believe Julia's lack of a Java-esque OOP is a design mistake. I don't, so the post won't go into that.
 
@@ -42,7 +42,7 @@ Hello, world!
 231316
 ```
 
-Yep, 231 MB memory consumption for a hello-world script. Julia's runtime is _enormous_ - these megabytes are not just used by Julias compiler, it apparently pre-allocates BLAS buffers, just in case the user wants to multiply matrices in their hello-world script, you know. Forget the latency, a background consumption of 231 MB completely excludes usign Julia for anything but application-level programs running on a PC or a compute cluster. For anything else, be it mobile, embedded, daemon processes, etc, you'll need to use something else.
+Yep, 231 MB memory consumption for a hello-world script. Julia's runtime is _enormous_ - these megabytes are not just used by Julias compiler, it apparently pre-allocates BLAS buffers, just in case the user wants to multiply matrices in their hello-world script, you know. Forget the latency, a background consumption of 231 MB completely excludes using Julia for anything but application-level programs running on a PC or a compute cluster. For anything else, be it mobile, embedded, daemon processes, etc, you'll need to use something else.
 
 In fact, even for desktop-level applications, wasting 200+ MB on the Julia runtime is barely acceptable. Think of all the hate Electron gets for wasting resources. _Every_ Julia program is as bad as Electron in this regard. A command-line calculator written in Julia consumes more resources than the video game Warcraft III.
 
@@ -95,11 +95,11 @@ A more important consequence of Julia being a young, immature language is that t
 
 First, compared to established languages, lots of packages are missing. Especially if you work in a niche subject, as most scientists do, you are much more likely to find a Python or R package to fit your needs than a Julia package. This situation will obviously improve over time, but right now, Julia is still quite far behind.
 
-You're also much more likely to find outdated or unmaintained packages in Julia. This is not because Julia packages tend to fall into disrepair more quickly than other languages, I think, but rather because packages which has already existed for 20 years are more likely to last another five more years than packages that have existed for two years. It's only been three years since Julia 1.0 came out, so if you find a blog post from 2015, any posted Julia code is unlike to work, and the packages have probably released several breaking changes since then. In comparison, the Python package Numpy has been around five times longer than Julia 1.0!
+You're also much more likely to find outdated or unmaintained packages in Julia. This is not because Julia packages tend to fall into disrepair more quickly than other languages, I think, but rather because packages which has already existed for 20 years are more likely to last another five more years than packages that have existed for two years. It's only been three years since Julia 1.0 came out, so if you find a blog post from 2015, any posted Julia code is unlikely to work, and the packages have probably released several breaking changes since then. In comparison, the Python package Numpy has been around five times longer than Julia 1.0!
 
 In software ecosystems, it also takes a while for effort to consolidate to well-known packages. In Python, everybody knows, for example, to use `pandas` when working with dataframes. It has become the de-facto standard. And if it is to be dethroned, any contender must compare favorably against `pandas`, which means it must itself be a solid, well-used package.
 
-Perhaps most critically, the developer tooling sorrounding Julia is also immature, with lots of basic functionality missing. This is also a consequence of the ecosystem simply not being mature enough, with too little development effort behind it (notably, no large companies have made large contributions to Julia, unlike every other language I know of). Here are a few examples, haphazardly chosen:
+Perhaps most critically, the developer tooling surrounding Julia is also immature, with lots of basic functionality missing. This is also a consequence of the ecosystem simply not being mature enough, with too little development effort behind it (notably, no large companies have made large contributions to Julia, unlike every other language I know of). Here are a few examples, haphazardly chosen:
 
 * Julia's built-in `Test` package is barebones, and does not offer setup and teardown of tests, nor the functionality to only run a subset of the full test suite.
 * The editor experience is not great with Julia. It's getting better, but with the foremost Julia IDE developed by a few people in their spare time, it has all the crashes, slowness and instability you would expect.
@@ -143,7 +143,7 @@ So you can create type heiarchies, implement generic fallback methods, and overw
 ### You can't extend existing types with data
 Say you implement some useful `MyType`. Another package thinks it's really neat and wants to extend the type. Too bad, that's just not possible - `MyType` is final and can't be extended. If the original author didn't add an abstract supertype for `MyType` you're out of luck. And in all probability, the author didn't. After all, good coders usually follow the [YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it) principle: Don't pre-emptively implement what you don't need.
 
-In e.g. Python, this is just not a problem. You can subclass whatever you damn well please. In Rust, the problem is not even recognizable: Any type you write can freely derive traits and is not at all constrained by where it is placed in the type hierarchy, because there _is_ no type hierarchy.
+In e.g. Python, you are not going to run into types you want to subclass, but can't. You can subclass whatever you damn well please. In Rust, the problem is not even recognizable: Any type you write can freely derive traits and is not at all constrained by where it is placed in the type hierarchy, because there _is_ no type hierarchy.
 
 ### Abstract interfaces are unenforced and undiscoverable
 Suppose, on the other hand, you find out the author _did_ actually add `AbstractMyType`. Then you can subtype it:
@@ -158,7 +158,7 @@ end
 
 A few abstract types in Julia _are_ well documented, most notably `AbstractArray` and its abstract subtypes, and it's probably no coindidence that Julia's array ecosystem is so good. But this is a singular good example, not the general pattern. Ironically, this exception is often held up as an example of why the Julia type system _works well_.
 
-Here is a fun challenge for anyone who thinks "it can't be that bad": Try to implement a `TwoWayDict`, an `AbstractDict` where if `d[a] = b`, then `d[b] = a`. In Python, which has inheritance, this is trivial. You simply subclass `dict`, overwrite a handful of its methods, and everything else works. In Julia, you have to define its data layout first - quite a drag, since dictionaries have a complicated structure (remember, you can't inherit data!). Then you must figure out everything `AbstractDict` promises (good luck!) and implement that.
+Here is a fun challenge for anyone who thinks "it can't be that bad": Try to implement a `TwoWayDict`, an `AbstractDict` where if `d[a] = b`, then `d[b] = a`. In Python, which has inheritance, this is trivial. You simply subclass `dict`, overwrite a handful of its methods, and everything else works. In Julia, you have to define its data layout first - quite a drag, since dictionaries have a complicated structure (remember, you can't inherit data!). The data layout can be solved by creating a type that simply wraps a `Dict`, but the real pain of the implementation come when you must somehow figure out everything `AbstractDict` promises (good luck!) and implement that.
 
 ### Subtyping is an all-or-nothing thing
 Another problem with relying on subtyping for behaviour is that each type can only have one supertype, and it inherits _all_ of its methods. Often, that turns out to not be what you want: New types often has properties of several interfaces: Perhaps they are set-like, iterable, callable, printable, etc. But no, says Julia, pick _one_ thing. To be fair, "iterable", "callable" and "printable" are so generic and broadly useful they are not implemented using subtyping in Julia - but doesn't that say something?
@@ -170,6 +170,10 @@ Julia _does_ have traits, but they're half-baked, not supported on a language le
 Also, since so much of Julia's behaviour is controlled through the type of variables instead of traits, people are tempted to use wrapper types if they want type `A` to be able to behave like type `B`. But those are [a terrible idea](https://github.com/JuliaLang/julia/issues/37790), since it only moves the problem and in fact makes it worse: You now have a new wrapper type you need to implement everything for, and even if you do, the wrapper type is now of type `B`, and doesn't have access to the methods of `A`!
 
 A good example of the subtyping system not working is Julia's standard library `LinearAlgebra`. This package uses both wrapper types and traits to try to overcome the limitations of the type system, and suffers from both the workarounds. But an even clearer example of the failure of the type system is its use of _big unions_, that is, functions whose type signature has arguments of the type "A or B or C or D or E or ...". And these unions of types gets out of control: If you have Julia at hand, try to type in `LinearAlgebra.StridedVecOrMat` and watch the horror. The use of such an abomination is a symptom of an unsolved underlying problem with the type system.
+
+The consensus of Julians about how to use the type system in idiomatic code seem to be slowly drifting away from leaning on its type system, and towards ducktyping and traits. I essentially see this as the community implicitly beginning to face the problems of the type system and trying to avoid it where possible. All the individual gripes in the post about the system are well known, even if few people would grant the system as whole is poor. It has, however, been remarkably hard to provide good alternatives or solve the individual pain points. As Julia is maturing, there is less and less space to re-invent or enhance something as core as the type system.
+
+I expect that in the future, Julians will move even further towards Python-esque ducktyping. I predict that while there will arise packages that try to address some of these issues, they will be in disagreement about what to do, they will be niche, without good core language support, and therefore not really solve the problem.
 
 ## The iterator protocol is awful
 ### The protocol
@@ -220,8 +224,8 @@ For example, suppose you create an iterator that you need to process in two stag
 
 If you're a Julian reading this with scepticism, try implementing an interleaving iterator: It should take any number of iterators `x1, x2, ... xn` and produce a stream of their interleaved values: `x1_1, x2_x1, ... nx_1, x1_2 ... xn_m`. Easy peasy in Python, a nightmare in Julia because you have to juggle N states manually in the function. Or try re-implementing `zip` or a roundrobin iterator.
 
-## The existing iterators are poorly implemented
-I didn't really notice this until I tried Rust, and Julias `Transducers` package, both of whom implements iterators way betters than Julia itself does. This gripe is not _one single_ thing, but rather a series of smaller gripes about how Julia's iterators are just... generally not that well designed.
+## Functional programming primitives are not well designed
+I didn't really notice this until I tried Rust, and Julias `Transducers` package, both of whom implements iterators way betters than Julia itself does. This issue is not _one single_ design problem, but rather a series of smaller issues about how Julia's iterators are just... generally not that well designed.
 
 1. `eachline(::String)` and `countlines(::String)` does _not_ iterate over lines, or count lines of strings. Instead, they interpret the strings as filenames, tries to open the file and iterate over the lines in it. _What?_ So, how do you operate on strings? You have to wrap the strings in `IO` objects first. Yeah. that's another gripe, there is no such type as a `Path` in Julia - it just uses strings. Why not? I honestly don't know, other than perhaps the Julia devs wanted to get 1.0 out and didn't have time to implement them.
 
