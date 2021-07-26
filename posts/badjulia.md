@@ -9,15 +9,9 @@ This post is about all the major disadvantages of Julia. Some it will just be ra
 \tableofcontents
 
 ## Compile time latency
-The very first thing you learn about Julia is that it's unresponsive. You open the REPL, type in something trivial like:
+The very first thing you learn about Julia is that it's unresponsive. You open your favorite IDE, launch a Julia REPL, start typing... and see a _noticable_ lag before any text appears. As far as first impressions go, that isn't exactly great, especially for a language touted for its speed.
 
-```julia
-julia> sin(0.96^5)
-```
-
-and see a _noticable_ lag before the answer appears. As far as first impressions go, that isn't exactly great, especially for a language touted for its speed.
-
-What's happening is that Julia is compiling `sin` - and also much of the code related to the REPL itself - first time you use it. This causes the lag we call _compile time latency_. Hence, the effect is even larger if we pull in new code from external packages: A small script that uses the packages `BioSequences` and `FASTX` may have a 2 second latency, even if the computation itself takes microseconds.
+What's happening is that Julia is compiling the code needed for its REPL and its integration with your editor. This "runtime" compilation causes the lag we call _compile time latency_. Hence, the effect is even larger if we pull in new code from external packages: A small script that uses the packages `BioSequences` and `FASTX` may have a 2 second latency, even if the computation itself takes microseconds.
 
 And it can get worse, still. Among Julians, latency is often referred to as TTFP: _Time To First Plot_. Graphical plotting became the posterboy for this problem because plotting involves a large amount of code that does relatively little work. Importing `Plots` and plotting the simplest line plot takes 8 seconds. However, being the posterboy for latency, Plots have gotten a lot of attention and engineering effort to reduce its latency, so it's hardly the worst package. Packages like `Turing` or `ApproxFun` may add half a minute to latency - `Turing` took 40 seconds to start up on my laptop. I've heard of organizations whose codebase is in Julia where it takes 5 minutes to start a Julia process and load their packages.
 
