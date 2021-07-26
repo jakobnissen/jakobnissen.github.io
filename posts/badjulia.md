@@ -3,7 +3,7 @@ _Written 2021-07-25, updated {{fd_mtime_raw}}_
 
 Julia is my favorite programming language. More than that actually, perhaps I'm a bit of a fanboy. Sometimes, though, the ceaseless celebration of Julia by fans like me can be a bit too much. It papers over legitimate problems in the language, hindering progress. And from an outsider perspective, it's not only insufferable (I would guess), but also obfuscates the true pros and cons of the language. Learning why you may _not_ want to choose to use a tool is just as important as learning why you may.
 
-This post is about all the major disadvantages of Julia. Some it will just be rants about things I particularly don't like - hopefuly they will be informative, too. A post like this is necessarily subjective: Some people believe Julia's lack of a Java-esque OOP is a design mistake. I don't, so the post won't go into that.
+This post is about all the major disadvantages of Julia. Some it will just be rants about things I particularly don't like - hopefuly they will be informative, too. A post like this is necessarily subjective. For example, some people believe Julia's lack of a Java-esque OOP is a design mistake. I don't, so the post won't go into that.
 
 ## Table of contents
 \tableofcontents
@@ -84,14 +84,14 @@ UInt8[]
 
 I don't think it's because the Julia devs are careless, or Julia isn't well tested. It's just a matter of bugs continuously being discovered because Julia is relatively young software. As it matures and stabilizes post 1.0, the number of bugs have gone down and will continue to do so in the future. But until it does, don't expect mature, stable software when using Julia.
 
-There is, however, also the issue of unstable performance, where Julia is a uniquely awkward situation. Dynamic languages are slow, and people using them write code expecting them to be slow. Static languages are fast, because the compiler has full type information during the compilation process. If the compiler can't infer the type of something, the program won't compile. Most notably, because an inference failure in static languages causes the compilation to fail, _the compiler's inference is part of the API, and must remain stable_. Not so in Julia.
+There is, however, also the issue of unstable performance, where Julia is a uniquely awkward situation. Other dynamic languages are slow, and people using them write code expecting them to be slow. Static languages are fast, because the compiler has full type information during the compilation process. If the compiler can't infer the type of something, the program won't compile. Most notably, because an inference failure in static languages causes the compilation to fail, _the compiler's inference is part of the API, and must remain stable_. Not so in Julia.
 
 In Julia, what the compiler knows about your code and the optimizations it does is a pure implementation detail - at long as it produces the correct result. Even in situations where _nothing_ can be inferred about the types Julia will run and produce the correct result, just hundreds of times slower. That means that a compiler change that causes a failure of inference and a 100x performance regression is not a breaking change. So, these happens.
 
 I mean, don't get me wrong, they don't happen _often_, and they usually only affect part of your program, so the regression is rarely that dramatic. The Julia team really tries to avoid regressions like that, and they're usually picked up and fixed on the master branch of Julia before they make it to any release. Still, if you've maintained a few Julia packages, I bet it has happened to you more than once.
 
 ## The ecosystem is immature
-A more important consequence of Julia being a young, immature language is that the package ecosystem is similarly immature. And compared to the core language, which have a huge number of users and developers, the ecosystem settles more slowly. This has several consequences for Julia:
+A more important consequence of Julia being a young, immature language is that the package ecosystem is similarly immature. Compared to the core language, which have a huge number of users, and more developers, the ecosystem settles more slowly. This has several consequences for Julia:
 
 First, compared to established languages, lots of packages are missing. Especially if you work in a niche subject, as most scientists do, you are much more likely to find a Python or R package to fit your needs than a Julia package. This situation will obviously improve over time, but right now, Julia is still quite far behind.
 
@@ -104,9 +104,9 @@ Perhaps most critically, the developer tooling sorrounding Julia is also immatur
 * Julia's built-in `Test` package is barebones, and does not offer setup and teardown of tests, nor the functionality to only run a subset of the full test suite.
 * The editor experience is not great with Julia. It's getting better, but with the foremost Julia IDE developed by a few people in their spare time, it has all the crashes, slowness and instability you would expect.
 * Static analysis is brand new, and feels like it hasn't yet settled into its final form. It also has no IDE integration.
-* There is no common framework for benchmarking and profiling Julia code. In a single session, you may analyze the same function with `BenchmarkTools`, `Profile`, `JET`, `JETTest`, `@code_native` and `Cthulhu`, which each has to be loaded and launched individually. It should be possible to gather several of these tools in a single analysis package, but it has not yet been done.
+* There is no common framework for benchmarking and profiling Julia code. In a single session, you may analyze the same function with `BenchmarkTools`, `Profile`, `JET`, `JETTest`, `@code_native` and `Cthulhu`, which each has to be loaded and launched individually. This is a huge time sink, and a terrible user experience. It should be possible to gather several of these tools in a single analysis package, but it has not yet been done.
 
-## The subtyping system works poorly
+## The type system works poorly
 This is the most controversial of my gripes with Julia. People who don't know Julia have no idea what I mean when I say the subtyping system is bad, and people who _do_ know Julia are unlikely to agree with me. I'll give a brief recap of how the system works for anyone not familiar:
 
 In Julia, types can be either _abstract_ or _concrete_. Abstract types are considered "incomplete". They can have subtypes, but they cannot hold any data fields or be instantiated - they are incomplete, after all. Concrete types can be instantiated and may have data, but cannot be subtyped since they are final. Here is an imaginary example:
@@ -122,7 +122,7 @@ struct DNASequence <: NucleotideSequence
 end
 ```
 
-You can define methods for abstract types, which are inherited by all its subtypes. But if a concrete type define the same method, that will overwrite the abstract one:
+You can define methods for abstract types, which are inherited by all its subtypes (that is, _behaviour_ can be inherited, but not _data_). But if a concrete type define the same method, that will overwrite the abstract one:
 
 ```julia
 # Generic function, is slow
@@ -143,7 +143,7 @@ So you can create type heiarchies, implement generic fallback methods, and overw
 ### You can't extend existing types with data
 Say you implement some useful `MyType`. Another package thinks it's really neat and wants to extend the type. Too bad, that's just not possible - `MyType` is final and can't be extended. If the original author didn't add an abstract supertype for `MyType` you're out of luck. And in all probability, the author didn't. After all, good coders usually follow the [YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it) principle: Don't pre-emptively implement what you don't need.
 
-In e.g. Python, this is just not a problem. You can subclass whatever you damn well please. In Rust, the problem is not even recognizable: Any type you write can freely derive traits and is not at all constrained by where it is placed in the type hierarchy.
+In e.g. Python, this is just not a problem. You can subclass whatever you damn well please. In Rust, the problem is not even recognizable: Any type you write can freely derive traits and is not at all constrained by where it is placed in the type hierarchy, because there _is_ no type hierarchy.
 
 ### Abstract interfaces are unenforced and undiscoverable
 Suppose, on the other hand, you find out the author _did_ actually add `AbstractMyType`. Then you can subtype it:
@@ -156,16 +156,16 @@ end
 
 ... and now what? What do you need to implement? What does the abstract type require? What does it guarantee? Julia offers absolutely no way of finding out what the abstract interface is, or how you conform to it. In fact, even in Base Julia, fundamental types like `AbstractSet`, `AbstractChannel`, `Number` and `AbstractFloat` are just not documented. What actually _is_ a `Number`, in Julia? I mean, we know what a number is conceptually, but what are you opting in to when you subtype `Number`? What do you promise? Who knows? Do even the core developers know? I doubt it.
 
-A few abstract types in Julia _are_ well documented, most notably `AbstractArray` and its abstract subtypes, and it's probably no coindidence that Julia's array ecosystem is so good. But this is a singular good example, not the general pattern.
+A few abstract types in Julia _are_ well documented, most notably `AbstractArray` and its abstract subtypes, and it's probably no coindidence that Julia's array ecosystem is so good. But this is a singular good example, not the general pattern. Ironically, this exception is often held up as an example of why the Julia type system _works well_.
 
 Here is a fun challenge for anyone who thinks "it can't be that bad": Try to implement a `TwoWayDict`, an `AbstractDict` where if `d[a] = b`, then `d[b] = a`. In Python, which has inheritance, this is trivial. You simply subclass `dict`, overwrite a handful of its methods, and everything else works. In Julia, you have to define its data layout first - quite a drag, since dictionaries have a complicated structure (remember, you can't inherit data!). Then you must figure out everything `AbstractDict` promises (good luck!) and implement that.
 
 ### Subtyping is an all-or-nothing thing
-Another problem with relying on subtyping for behaviour is that each type can only have one supertype, and it inherits _all_ of its methods. Often, that turns out to not be what you want: New types often has properties of several interfaces: Perhaps they are set-like, iterable, callable, printable, etc. But no, says Julia, pick _one_ thing. To be fair, "iterable", "callable" and "printable" are so generic they are not implemented using subtyping in Julia - but doesn't that say something?
+Another problem with relying on subtyping for behaviour is that each type can only have one supertype, and it inherits _all_ of its methods. Often, that turns out to not be what you want: New types often has properties of several interfaces: Perhaps they are set-like, iterable, callable, printable, etc. But no, says Julia, pick _one_ thing. To be fair, "iterable", "callable" and "printable" are so generic and broadly useful they are not implemented using subtyping in Julia - but doesn't that say something?
 
-In Rust, these properties are implemented through traits instead. Because each trait is defined independently, each type faces a smorgasbord of possibilities. It can choose _exactly_ what it can support, and nothing more. It also leads to more code reuse, as you can e.g. simply derive `Copy` and get it without having to implement it.
+In Rust, these properties are implemented through traits instead. Because each trait is defined independently, each type faces a smorgasbord of possibilities. It can choose _exactly_ what it can support, and nothing more. It also leads to more code reuse, as you can e.g. simply derive `Copy` and get it without having to implement it. It also means there is an incentive to create "smaller" traits. In Julia, if you subtype `AbstractFoo`, you opt in to a potentially huge number of methods. In contrast, it's no problem to create very specific traits that concerns only a few - or one - method.
 
-Julia _does_ have traits, but they're half-baked, not supported on a language level, and haphazardly used. They are usually implemented through dispatch, which is also annoying since it can make it difficult to understand what is actually being called. Julia's broadcasting mechanism, for example, is controlled primarily through traits, and just finding the method ultimately being called is a pain.
+Julia _does_ have traits, but they're half-baked, not supported on a language level, and haphazardly used. They are usually implemented through multiple dispatch, which is also annoying since it can make it difficult to understand what is actually being called. Julia's broadcasting mechanism, for example, is controlled primarily through traits, and just finding the method ultimately being called is a pain.
 
 Also, since so much of Julia's behaviour is controlled through the type of variables instead of traits, people are tempted to use wrapper types if they want type `A` to be able to behave like type `B`. But those are [a terrible idea](https://github.com/JuliaLang/julia/issues/37790), since it only moves the problem and in fact makes it worse: You now have a new wrapper type you need to implement everything for, and even if you do, the wrapper type is now of type `B`, and doesn't have access to the methods of `A`!
 
