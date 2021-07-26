@@ -39,22 +39,22 @@ This one's pretty easy to demonstrate:
 ```
 $ /usr/bin/time -f "%M" julia hello_world.jl
 Hello, world!
-231316
+148724
 ```
 
-Yep, 231 MB memory consumption for a hello-world script. Julia's runtime is _enormous_ - these megabytes are not just used by Julias compiler, it apparently pre-allocates BLAS buffers, just in case the user wants to multiply matrices in their hello-world script, you know. Forget the latency, a background consumption of 231 MB completely excludes using Julia for anything but application-level programs running on a PC or a compute cluster. For anything else, be it mobile, embedded, daemon processes, etc, you'll need to use something else.
+Yep, ~150 MB memory consumption for a hello-world script. Julia's runtime is _enormous_ - these megabytes are not just used by Julias compiler, it apparently pre-allocates BLAS buffers, just in case the user wants to multiply matrices in their hello-world script, you know. Forget the latency, a background consumption of 150 MB completely excludes using Julia for anything but application-level programs running on a PC or a compute cluster. For anything else, be it mobile, embedded, daemon processes, etc, you'll need to use something else.
 
-In fact, even for desktop-level applications, wasting 200+ MB on the Julia runtime is barely acceptable. Think of all the hate Electron gets for wasting resources. _Every_ Julia program is as bad as Electron in this regard. A command-line calculator written in Julia consumes more resources than the video game Warcraft III.
+In fact, even for desktop-level applications, consuming 150 MB on the Julia runtime is barely acceptable. Think of all the hate Electron gets for wasting resources. _Every_ Julia program is in the same ballpark as Electron in this regard. A command-line calculator written in Julia consumes more memory than the 2003 video game _Command & Conquer: Generals_.
 
 ## Julia can't easily integrate into other languages
-Another consequence of Julia's massive runtime is that it makes it annoying to call into Julia from other languages. If your Python script needs to rely on Julia, you'll need to pay up front: Both the latency, _and_ the 200-something megabytes.
+Another consequence of Julia's massive runtime is that it makes it annoying to call into Julia from other languages. If your Python script needs to rely on Julia, you'll need to pay up front: Both the latency, _and_ the 150-ish megabytes.
 
-Compare this to a static language like C, where you can compile a C lib to a binary that other programs simply calls into. Julians are usually very proud of the large amount of code sharing and code reuse in the Julia community, but it's worth noting that this sharing stops abruptly at the language barrier: We might be able to use a Rust library, but no-one would use a Julia library if they could avoid it. So if you want to code up some universally used library, you better go with a static language.
+Compare this to a static language like C, where you can compile a C lib to a binary that other programs simply calls into. Julians are usually very proud of the large amount of code sharing and code reuse in the Julia community, but it's worth noting that this sharing stops abruptly at the language barrier: We might be able to use a Rust library in Julia with little friction, but no-one would use a Julia library if they could avoid it. So if you want to code up some universally used library, you better go with a static language.
 
 ## Weak static analysis
 This is one point where I've changed perspective after having tried coding Rust. Before learning Rust, when I only knew Python and Julia I would have said something like:
 
-> Sure, static typing is useful. But to ensure program correctness, you need tests anyway, and these tests will catch the vast majority of what would be compile-time errors. The small safety you lose in a dynamic language is more than made up by the time saved, which you can use to write better tests.
+> Sure, static analysis is useful. But to ensure program correctness, you need tests anyway, and these tests will catch the vast majority of what would be compile-time errors. The small safety you lose in a dynamic language is more than made up by the time saved, which you can use to write better tests.
 
 How silly, past me, if only you knew! See, I taught myself Rust by doing the [Advent of Code 2020](https://github.com/jakobnissen/advent2020) in Rust. Being a neophyte, I was so bad at Rust that I had more than one compiler error per line of code on average. _Everything_ was hard. And yet, for about two-thirds of the challenges, the _first_ time the program compiled, it gave the correct answer.
 
@@ -62,7 +62,7 @@ That was astounding to me. Working with Python or Julia, I expected the program 
 
 And this was for small scripts. I can only imagine the productivity boots that static analysis gives you for larger projects when you can safely refactor, because you know immediately if you do something wrong.
 
-Back to Julia: It lies somewhere in between Python and Rust in terms of static analysis and safety. You _can_ add type annotations to your functions, but the errors still only appear at runtime, and it's generally considered un-idiomatic to use too many type annotations. [Linting](https://github.com/julia-vscode/StaticLint.jl) and [static analysis](https://github.com/aviatesk/JET.jl) for Julia are slowly appearing and improving, but compared to Rust they catch just a small fraction of errors. When writing generic package code where types are mostly indeterminate until runtime, they are close to useless.
+Back to Julia: It lies somewhere in between Python and Rust in terms of static analysis and safety. You _can_ add type annotations to your functions, but the errors still only appear at runtime, and it's generally considered un-idiomatic to use too many type annotations. [Linting](https://github.com/julia-vscode/StaticLint.jl) and [static analysis](https://github.com/aviatesk/JET.jl) for Julia are slowly appearing and improving, but compared to Rust they catch just a small fraction of errors. When writing generic package code where types are mostly indeterminate until runtime, they can't do much type analysis.
 
 Another issue with static analysis in Julia is that, because writing un-inferrable code is a completely valid (if ineffient) coding style, there is a lot of code that simply can't be statically analysed. Similarly, you can have a Julia package whose dynamic style causes tonnes of "issues" according to the static analyzer, which nonetheless work fine. If your package depends on such a package, your static analysis will be flooded with false positives originating from the third-party code.
 
@@ -75,7 +75,7 @@ Julia released 1.0 in 2018, and has been committed to no breakage since then. So
 
 Instability isn't just about breaking changes. It's also about bugs and incorrect documentation. And here, Julia is pretty bad. Having used Julia since just before 1.0, I run into bugs in the core language regularly. Not often, but perhaps once every couple of months. I can't recall ever having run into a bug in Python.
 
-If you doubt it, take a look at the [open issues marked as bugs](https://github.com/JuliaLang/julia/issues?page=2&q=is%3Aissue+is%3Aopen+label%3Abug). Some of these are transient bugs on master, but there are _many_, _many_ old bugs you can still go in and trigger from the REPL on the stable Julia release. Here's one [I reported about a year ago](https://github.com/JuliaLang/julia/issues/36605), and which still hasn't been fixed:
+If you doubt it, take a look at the [open issues marked as bugs](https://github.com/JuliaLang/julia/issues?q=is%3Aissue+is%3Aopen+label%3Abug). Some of these are transient bugs on master, but there are _many_, _many_ old bugs you can still go in and trigger from the REPL on the stable Julia release. Here's one [I reported about a year ago](https://github.com/JuliaLang/julia/issues/36605), and which still hasn't been fixed:
 
 ```julia
 julia> open(read, "/home/jakob/Documents") # yes, a directory
@@ -84,7 +84,7 @@ UInt8[]
 
 I don't think it's because the Julia devs are careless, or Julia isn't well tested. It's just a matter of bugs continuously being discovered because Julia is relatively young software. As it matures and stabilizes post 1.0, the number of bugs have gone down and will continue to do so in the future. But until it does, don't expect mature, stable software when using Julia.
 
-There is, however, also the issue of unstable performance, where Julia is a uniquely awkward situation. Other dynamic languages are slow, and people using them write code expecting them to be slow. Static languages are fast, because the compiler has full type information during the compilation process. If the compiler can't infer the type of something, the program won't compile. Most notably, because an inference failure in static languages causes the compilation to fail, _the compiler's inference is part of the API, and must remain stable_. Not so in Julia.
+There is, however, also the issue of unstable performance, where Julia is a uniquely awkward situation. Other dynamic languages are slow, and people using them write code expecting them to be slow. Static languages are fast, because the compiler has full type information during the compilation process. If the compiler can't infer the type of something, the program won't compile. Importantly, because an inference failure in static languages causes the compilation to fail, _the compiler's inference is part of the API, and must remain stable_. Not so in Julia.
 
 In Julia, what the compiler knows about your code and the optimizations it does is a pure implementation detail - at long as it produces the correct result. Even in situations where _nothing_ can be inferred about the types Julia will run and produce the correct result, just hundreds of times slower. That means that a compiler change that causes a failure of inference and a 100x performance regression is not a breaking change. So, these happens.
 
@@ -104,10 +104,10 @@ Perhaps most critically, the developer tooling surrounding Julia is also immatur
 * Julia's built-in `Test` package is barebones, and does not offer setup and teardown of tests, nor the functionality to only run a subset of the full test suite.
 * The editor experience is not great with Julia. It's getting better, but with the foremost Julia IDE developed by a few people in their spare time, it has all the crashes, slowness and instability you would expect.
 * Static analysis is brand new, and feels like it hasn't yet settled into its final form. It also has no IDE integration.
-* There is no common framework for benchmarking and profiling Julia code. In a single session, you may analyze the same function with `BenchmarkTools`, `Profile`, `JET`, `JETTest`, `@code_native` and `Cthulhu`, which each has to be loaded and launched individually. This is a huge time sink, and a terrible user experience. It should be possible to gather several of these tools in a single analysis package, but it has not yet been done.
+* There is no common framework for benchmarking and profiling Julia code. In a single session, you may analyze the same function with `BenchmarkTools`, `@allocated`, `Profile`, `JET`, `JETTest`, `@code_native` and `Cthulhu`, which each has to be loaded and launched individually. This issue is particularly notable when a new user faces performance issues and ask a Julia forum "what should I do", and get 10 _different_ answers, each concerning one specific sub-analysis that may cast light on one particular cause of performance problems. This is a huge time sink, and not a great user experience. It should be possible to gather several of these tools in a single analysis package, but it has not yet been done.
 
 ## The type system works poorly
-This is the most controversial of my gripes with Julia. People who don't know Julia have no idea what I mean when I say the subtyping system is bad, and people who _do_ know Julia are unlikely to agree with me. I'll give a brief recap of how the system works for anyone not familiar:
+This is the most controversial of my problems with Julia. People who don't know Julia have no idea what I mean when I say the subtyping system is bad, and people who _do_ know Julia are unlikely to agree with me. I'll give a brief recap of how the system works for anyone not familiar:
 
 In Julia, types can be either _abstract_ or _concrete_. Abstract types are considered "incomplete". They can have subtypes, but they cannot hold any data fields or be instantiated - they are incomplete, after all. Concrete types can be instantiated and may have data, but cannot be subtyped since they are final. Here is an imaginary example:
 
@@ -175,7 +175,7 @@ The consensus of Julians about how to use the type system in idiomatic code seem
 
 I expect that in the future, Julians will move even further towards Python-esque ducktyping. I predict that while there will arise packages that try to address some of these issues, they will be in disagreement about what to do, they will be niche, without good core language support, and therefore not really solve the problem.
 
-## The iterator protocol is awful
+## The iterator protocol is too hard to use
 ### The protocol
 By "the iterator protocol", I mean: How does a for loop work? The three languages I'm familiar with, Python, Rust and Julia, all handle this slightly different. In Julia, the following code:
 
@@ -185,7 +185,7 @@ for i in x
 end
 ```
 
-lowers into:
+lowers into something equivalent to:
 ```julia
 itval = iterate(x)
 while itval !== nothing
@@ -195,7 +195,7 @@ while itval !== nothing
 end
 ```
 
-This means that, to implement an iterator, you need to implement `iterate(x)` and `iterate(x, state)`. It should return `nothing` when the iteration is done, and `(i, next_state)` when it still has elements. By the way, you _also_ need to implement a few traits, which Julia does not warn you about if you forget to, or implement them wrongly. But [I gripe about that elsewhere](#abstract_interfaces_are_unenforced_and_undiscoverable).
+This means that, to implement an iterator, you need to implement `iterate(x)` and `iterate(x, state)`. It should return `nothing` when the iteration is done, and `(i, next_state)` when it still has elements. By the way, you _also_ need to implement a few traits, which Julia does not warn you about if you forget, or implement them wrongly. But [I gripe about that elsewhere](#abstract_interfaces_are_unenforced_and_undiscoverable).
 
 So: Why is it like that? One of the reason it was designed like that is that it makes the `iterate` function and the iterator itself _stateless_, since the state is stored in the local variable passed as an argument to the `iterate` function. It means you can't have bugs like this Python bug:
 
@@ -222,10 +222,10 @@ But that's not the _real_ problem. The real problem is that Julia's iterators ar
 
 For example, suppose you create an iterator that you need to process in two stages: First, you do some initialization with the first elements of the iterator. Perhaps it's an iterator of lines and you need to skip the header. After that, you iterate over the remaining arguments. You implement this as the functions `parse_header` and `parse_rest` In Julia, _you need to explicitly pass state between the functions_ - not to mention all the boilerplate code it introduces because you now can't iterate over the iterator in a for loop since that would "restart" the iterator. Well, _maybe_ it would, who knows if it's stateless!
 
-If you're a Julian reading this with scepticism, try implementing an interleaving iterator: It should take any number of iterators `x1, x2, ... xn` and produce a stream of their interleaved values: `x1_1, x2_x1, ... nx_1, x1_2 ... xn_m`. Easy peasy in Python, a nightmare in Julia because you have to juggle N states manually in the function. Or try re-implementing `zip` or a roundrobin iterator.
+If you're a Julian reading this with scepticism, try implementing an interleaving iterator: It should take any number of iterators `x1, x2, ... xn` and produce a stream of their interleaved values: `x1_1, x2_x1, ... nx_1, x1_2 ... xn_m`. Easy peasy in Python, a headache in Julia because you have to juggle N states manually in the function. Or try re-implementing `zip` or a roundrobin iterator.
 
 ## Functional programming primitives are not well designed
-I didn't really notice this until I tried Rust, and Julias `Transducers` package, both of whom implements iterators way betters than Julia itself does. This issue is not _one single_ design problem, but rather a series of smaller issues about how Julia's iterators are just... generally not that well designed.
+I didn't really notice this until I tried Rust, and Julias `Transducers` package, both of whom implements the foundations of functional programming (by this I mean map, filter etc.) way betters than Julia itself does. This issue is not _one single_ design problem, but rather a series of smaller issues about how Julia's iterators are just... generally not that well designed.
 
 1. `eachline(::String)` and `countlines(::String)` does _not_ iterate over lines, or count lines of strings. Instead, they interpret the strings as filenames, tries to open the file and iterate over the lines in it. _What?_ So, how do you operate on strings? You have to wrap the strings in `IO` objects first. Yeah. that's another gripe, there is no such type as a `Path` in Julia - it just uses strings. Why not? I honestly don't know, other than perhaps the Julia devs wanted to get 1.0 out and didn't have time to implement them.
 
