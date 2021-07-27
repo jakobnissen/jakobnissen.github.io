@@ -19,11 +19,11 @@ So: How bad is this, really?
 
 Well, it depends on what you use Julia for. Remember, the latency is a one-time cost every time you start a Julia process. If you're a data scientist who works for hours on end in a Jupyter notebook, ten or even 40 seconds of startup time is merely a small annoyance. I'm in that category, broadly. When I start Julia, it rarely takes less than a few minutes before I shut down - and the Julia programs I run from command line takes minutes to complete, too. But some tasks and use cases rely on running lots of short Julia processes. These simply become impossible. For example, the latency makes Julia a complete non-starter for:
 
-* Simple Unix commandline tools such as `cd`, `ripgrep` or `ls`
+* Simple Unix commandline tools such as `ripgrep` or `ls`
 * Settings where responsiveness is key, say software in a self-driving car or airplane
 * Small composable scripts, e.g. as used in [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflows
 
-The latency also forces specific workflows for Julia users and developers. When using Python or Rust, you may be used to running some tests from command line, modifying a source file in the editor, then re-running the tests until they work. This workflow is not feasible in Julia - instead, you are essentially forced to into _REPL driven development_, where you have a single Julia session you keep open while modifying your code and observing the results.
+The latency also forces specific workflows for Julia users and developers. When using Python or Rust, you may be used to running some tests from command line, modifying a source file in the editor, then re-running the tests from command line until they work. This workflow is not feasible in Julia, because latency would occur every time you invoked Julia from command line. Instead, you are essentially forced to into _REPL driven development_, where you have a single Julia session you keep open alongside your editor, and interact with Julia (e.g. running tests or code analysis) only thorugh that REPL.
 
 Julias latency _is_ improving, and there _are_ hoops you can jump through to mitigate this problem somewhat. But the problem is fundamentally unsolvable, because it's built into Julia on a basic design level. So, before learning Julia, ask yourself if this is a dealbreaker for you.
 
@@ -43,7 +43,7 @@ In fact, even for desktop-level applications, consuming 150 MB on the Julia runt
 ## Julia can't easily integrate into other languages
 Another consequence of Julia's massive runtime is that it makes it annoying to call into Julia from other languages. If your Python script needs to rely on Julia, you'll need to pay up front: Both the latency, _and_ the 150-ish megabytes.
 
-Compare this to a static language like C, where you can compile a C lib to a binary that other programs simply calls into. Julians are usually very proud of the large amount of code sharing and code reuse in the Julia community, but it's worth noting that this sharing stops abruptly at the language barrier: We might be able to use a Rust library in Julia with little friction, but no-one would use a Julia library if they could avoid it. So if you want to code up some universally used library, you better go with a static language.
+Compare this to a static language like C, where you can compile a C lib to a binary that other programs simply calls into. Julians are usually very proud of [the large amount of code sharing and code reuse](https://www.youtube.com/watch?v=kc9HwsxE1OY) in the Julia community, but it's worth noting that this sharing stops abruptly at the language barrier: We might be able to use a Rust library in Julia with little friction, but no-one would use a Julia library if they could avoid it. So if you want to code up some universally used library, you better go with a static language.
 
 ## Weak static analysis
 This is one point where I've changed perspective after having tried coding Rust. Before learning Rust, when I only knew Python and Julia I would have said something like:
@@ -91,11 +91,11 @@ First, compared to established languages, lots of packages are missing. Especial
 
 You're also much more likely to find outdated or unmaintained packages in Julia. This is not because Julia packages tend to fall into disrepair more quickly than other languages, I think, but rather because packages which has already existed for 20 years are more likely to last another five more years than packages that have existed for two years. It's only been three years since Julia 1.0 came out, so if you find a blog post from 2015, any posted Julia code is unlikely to work, and the packages have probably released several breaking changes since then. In comparison, the Python package Numpy has been around five times longer than Julia 1.0!
 
-In software ecosystems, it also takes a while for effort to consolidate to well-known packages. In Python, everybody knows, for example, to use `pandas` when working with dataframes. It has become the de-facto standard. And if it is to be dethroned, any contender must compare favorably against `pandas`, which means it must itself be a solid, well-used package.
+In software ecosystems, it also takes a while for effort to consolidate to well-known packages. In Python, everybody knows, for example, to use `pandas` when working with dataframes. It has become the de-facto standard. And if it is to be dethroned, any contender must compare favorably against `pandas`, which means it must itself be a solid, well-used package. In Julia, it's not too rare to want a functionality and find three packages that do it in slightly different ways, all of them immature and light on features.
 
 Perhaps most critically, the developer tooling surrounding Julia is also immature, with lots of basic functionality missing. This is also a consequence of the ecosystem simply not being mature enough, with too little development effort behind it (notably, no large companies have made large contributions to Julia, unlike every other language I know of). Here are a few examples, haphazardly chosen:
 
-* Julia's built-in `Test` package is barebones, and does not offer setup and teardown of tests, nor the functionality to only run a subset of the full test suite.
+* Julia's built-in `Test` package is barebones, and does not offer setup and teardown of tests, nor the functionality to only run a subset of the full test suite. This is by design, but there does not exist a common go-to testing package that offers what the stdlib package lacks.
 * The editor experience is not great with Julia. It's getting better, but with the foremost Julia IDE developed by a few people in their spare time, it has all the crashes, slowness and instability you would expect.
 * Static analysis is brand new, and feels like it hasn't yet settled into its final form. It also has no IDE integration.
 * There is no common framework for benchmarking and profiling Julia code. In a single session, you may analyze the same function with `BenchmarkTools`, `@allocated`, `Profile`, `JET`, `JETTest`, `@code_native` and `Cthulhu`, which each has to be loaded and launched individually. This issue is particularly notable when a new user faces performance issues and ask a Julia forum "what should I do", and get 10 _different_ answers, each concerning one specific sub-analysis that may cast light on one particular cause of performance problems. This is a huge time sink, and not a great user experience. It should be possible to gather several of these tools in a single analysis package, but it has not yet been done.
@@ -132,7 +132,7 @@ function print(io::IO, seq::DNASequence)
 end
 ```
 
-So you can create type heiarchies, implement generic fallback methods, and overwrite them whenever you want. Neat! What's not to like? Well...
+So you can create type hierarchies, implement generic fallback methods, and overwrite them whenever you want. Neat! What's not to like? Well...
 
 ### You can't extend existing types with data
 Say you implement some useful `MyType`. Another package thinks it's really neat and wants to extend the type. Too bad, that's just not possible - `MyType` is final and can't be extended. If the original author didn't add an abstract supertype for `MyType` you're out of luck. And in all probability, the author didn't. After all, good coders usually follow the [YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it) principle: Don't pre-emptively implement what you don't need.
@@ -163,7 +163,7 @@ Julia _does_ have traits, but they're half-baked, not supported on a language le
 
 Also, since so much of Julia's behaviour is controlled through the type of variables instead of traits, people are tempted to use wrapper types if they want type `A` to be able to behave like type `B`. But those are [a terrible idea](https://github.com/JuliaLang/julia/issues/37790), since it only moves the problem and in fact makes it worse: You now have a new wrapper type you need to implement everything for, and even if you do, the wrapper type is now of type `B`, and doesn't have access to the methods of `A`!
 
-A good example of the subtyping system not working is Julia's standard library `LinearAlgebra`. This package uses both wrapper types and traits to try to overcome the limitations of the type system, and suffers from both the workarounds. But an even clearer example of the failure of the type system is its use of _big unions_, that is, functions whose type signature has arguments of the type "A or B or C or D or E or ...". And these unions of types gets out of control: If you have Julia at hand, try to type in `LinearAlgebra.StridedVecOrMat` and watch the horror. The use of such an abomination is a symptom of an unsolved underlying problem with the type system.
+A good example of the subtyping system not working is Julia's standard library `LinearAlgebra`. This package uses both wrapper types and traits to try to overcome the limitations of the type system, and suffers from both the workarounds. But an even clearer example of the failure of the type system is its use of _big unions_, that is, functions whose type signature has arguments of the type "A or B or C or D or E or ...". These typically appear in code when you need to add a method to an object, and then discover that the sets of types you need to implement it for doesn't fit into the type hierarchy as a single supertype. Why is it simply assumed that behaviour was strictly [monophyletic?](https://en.wikipedia.org/wiki/Monophyly). Besides how unwieldly they are, uninons are also un-extendable. And those unions in even Base Julia can get out of control: If you have Julia at hand, try to type in `LinearAlgebra.StridedVecOrMat` and watch the horror. The use of such an abomination is a symptom of an unsolved underlying problem with the type system.
 
 The consensus on idiomatic Julia seem to be slowly drifting away from leaning on its type system to specify constraints, and towards ducktyping and traits. I essentially see this as the community implicitly beginning to acknowledge the problems of the type system and trying to avoid it where possible. All the individual gripes in the post about the system are well known, even if few people would grant the system as whole is poor. It has, however, been remarkably hard to provide good alternatives or solve the individual pain points. As Julia is maturing, there is less and less space to re-invent or enhance something as core as the type system.
 
@@ -191,7 +191,7 @@ end
 
 This means that, to implement an iterator, you need to implement `iterate(x)` and `iterate(x, state)`. It should return `nothing` when the iteration is done, and `(i, next_state)` when it still has elements. By the way, you _also_ need to implement a few traits, which Julia does not warn you about if you forget, or implement them wrongly. But [I gripe about that elsewhere](#abstract_interfaces_are_unenforced_and_undiscoverable).
 
-So: Why is it like that? One of the reason it was designed like that is that it makes the `iterate` function and the iterator itself _stateless_, since the state is stored in the local variable passed as an argument to the `iterate` function. It means you can't have bugs like this Python bug:
+So: Why is it like that? Well, [I'm not the only one to wonder](https://mikeinnes.github.io/2020/06/04/iterate.html). At least one of the reasons it was designed like that is that it makes the `iterate` function and the iterator itself _stateless_, since the state is stored in the local variable passed as an argument to the `iterate` function. It means you can't have bugs like this Python bug:
 
 ```python
 >>> iter = (i+1 for i in range(3))
