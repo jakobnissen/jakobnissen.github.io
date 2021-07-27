@@ -5,7 +5,7 @@ Julia is my favorite programming language. More than that actually, perhaps I'm 
 
 This post is about all the major disadvantages of Julia. Some of it will just be rants about things I particularly don't like - hopefully they will be informative, too. A post like this is necessarily subjective. For example, some people believe Julia's lack of a Java-esque OOP is a design mistake. I don't, so the post won't go into that.
 
-## Table of contents
+@@toc-header Table of contents@@
 \tableofcontents
 
 ## Compile time latency
