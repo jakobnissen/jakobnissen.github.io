@@ -30,11 +30,13 @@ Julias latency _is_ improving, and there _are_ hoops you can jump through to mit
 ## Large memory consumption
 This one's pretty easy to demonstrate:
 
-```
+@@shellcode
+```plaintext
 $ /usr/bin/time -f "%M" julia hello_world.jl
 Hello, world!
 148724
 ```
+@@
 
 Yep, ~150 MB memory consumption for a hello-world script. Julia's runtime is _enormous_ - these megabytes are not just used by Julias compiler, it apparently pre-allocates BLAS buffers, just in case the user wants to multiply matrices in their hello-world script, you know. Forget the latency, a background consumption of 150 MB completely excludes using Julia for anything but application-level programs running on a PC or a compute cluster. For anything else, be it mobile, embedded, daemon processes, etc, you'll need to use something else.
 
@@ -71,10 +73,12 @@ Instability isn't just about breaking changes. It's also about bugs and incorrec
 
 If you doubt it, take a look at the [open issues marked as bugs](https://github.com/JuliaLang/julia/issues?q=is%3Aissue+is%3Aopen+label%3Abug). Some of these are transient bugs on master, but there are _many_, _many_ old bugs you can still go in and trigger from the REPL on the stable Julia release. Here's one [I reported about a year ago](https://github.com/JuliaLang/julia/issues/36605), and which still hasn't been fixed:
 
+@@juliacode
 ```julia
 julia> open(read, "/home/jakob/Documents") # yes, a directory
 UInt8[]
 ```
+@@
 
 I don't think it's because the Julia devs are careless, or Julia isn't well tested. It's just a matter of bugs continuously being discovered because Julia is relatively young software. As it matures and stabilizes post 1.0, the number of bugs have gone down and will continue to do so in the future. But until it does, don't expect mature, stable software when using Julia.
 
@@ -105,6 +109,7 @@ This is the most controversial of my problems with Julia. People who don't know 
 
 In Julia, types can be either _abstract_ or _concrete_. Abstract types are considered "incomplete". They can have subtypes, but they cannot hold any data fields or be instantiated - they are incomplete, after all. Concrete types can be instantiated and may have data, but cannot be subtyped since they are final. Here is an imaginary example:
 
+@@juliacode
 ```julia
 # Abstract type subtyping BioSequence (itself abstract)
 abstract type NucleotideSequence <: BioSequence end
@@ -115,9 +120,11 @@ struct DNASequence <: NucleotideSequence
     x::Vector{DNA}
 end
 ```
+@@
 
 You can define methods for abstract types, which are inherited by all its subtypes (that is, _behaviour_ can be inherited, but not _data_). But if a concrete type define the same method, that will overwrite the abstract one:
 
+@@juliacode
 ```julia
 # Generic function, is slow
 function print(io::IO, seq::NucleotideSequence)
@@ -131,6 +138,7 @@ function print(io::IO, seq::DNASequence)
     write(io, seq.x) # optimized write implementation
 end
 ```
+@@
 
 So you can create type hierarchies, implement generic fallback methods, and overwrite them whenever you want. Neat! What's not to like? Well...
 
@@ -142,11 +150,13 @@ In e.g. Python, you are not going to run into types you want to subclass, but ca
 ### Abstract interfaces are unenforced and undiscoverable
 Suppose, on the other hand, you find out the author _did_ actually add `AbstractMyType`. Then you can subtype it:
 
+@@juliacode
 ```julia
 struct YourType <: AbstractMyType
     [ stuff ]
 end
 ```
+@@
 
 ... and now what? What do you need to implement? What does the abstract type require? What does it guarantee? Julia offers absolutely no way of finding out what the abstract interface is, or how you conform to it. In fact, even in Base Julia, fundamental types like `AbstractSet`, `AbstractChannel`, `Number` and `AbstractFloat` are just not documented. What actually _is_ a `Number`, in Julia? I mean, we know what a number is conceptually, but what are you opting in to when you subtype `Number`? What do you promise? Who knows? Do even the core developers know? I doubt it.
 
@@ -173,13 +183,17 @@ I expect that in the future, Julians will move even further towards Python-esque
 ### The protocol
 By "the iterator protocol", I mean: How does a for loop work? The three languages I'm familiar with, Python, Rust and Julia, all handle this slightly different. In Julia, the following code:
 
+@@juliacode
 ```julia
 for i in x
     # stuff
 end
 ```
+@@
 
 lowers into something equivalent to:
+
+@@juliacode
 ```julia
 itval = iterate(x)
 while itval !== nothing
@@ -188,20 +202,25 @@ while itval !== nothing
     itval = iterate(x, state)
 end
 ```
+@@
 
 This means that, to implement an iterator, you need to implement `iterate(x)` and `iterate(x, state)`. It should return `nothing` when the iteration is done, and `(i, next_state)` when it still has elements. By the way, you _also_ need to implement a few traits, which Julia does not warn you about if you forget, or implement them wrongly. But [I gripe about that elsewhere](#abstract_interfaces_are_unenforced_and_undiscoverable).
 
 So: Why is it like that? Well, [I'm not the only one to wonder](https://mikeinnes.github.io/2020/06/04/iterate.html). At least one of the reasons it was designed like that is that it makes the `iterate` function and the iterator itself _stateless_, since the state is stored in the local variable passed as an argument to the `iterate` function. It means you can't have bugs like this Python bug:
 
+@@pythoncode
 ```python
 >>> iter = (i+1 for i in range(3))
 >>> length = sum(1 for i in iter)
 >>> list(iter) # oops!
 []
 ```
+@@
 
 ### The problem
 First, you _absolutely_ can have the same bug as in Python, because _some_ iterators _are_ stateful! For example, if you read a file:
+
+@@juliacode
 ```julia
 julia> lines = eachline("my_file.txt");
 
@@ -210,18 +229,22 @@ julia> n_lines = count(x -> true, lines);
 julia> collect(lines)
 String[]
 ```
+@@
+
 And since there is no way of knowing programatically (and certainly not statically) if an iterator is stateful, you better adopt a coding style that assumes all iterators are stateful, anyway.
 
 To be clear, the _problem_ isn't that Julia has stateless iterators. Stateless iterators have advantages, they may in fact be superior and preferable where possible. The real problem is that _iteration is never stateless_ - in a loop, there _must_ always be state. When using stateless iterators, the problem of keeping track of the state is not solved, but simply moved elsewhere. Julia's iterators are "stateless" in the worst possible sense of the word: That the compiler and the language doesn't know about state, and therefore offloads the job of keeping track of it to the programmer. Reasoning about state across time is a famously hard problem in programming, and with Julia's iterators, you get to feel 100% of that pain.
 
 Making the compiler's job easier by offloading work to the programmer is not how high-level languages are supposed to work! The solution, at least not being a Julia developer, seems obvious. Iteration should instead lower to
 
+@@juliacode
 ```julia
 itr = iterator(x)
 while (i = next(itr)) !== nothing
     # stuff
 end
 ```
+@@
 
 This is how Rust and Python works, approximately. Notice the code is simpler than what Julia acutally lowers to. The big advantage, however, is that the state is stored in the `itr` object, and doesn't need to be manually handled or passed around by the person implementing the iterations. Interestingly, it already solves the problem of stateful iterators that Julia's solution is meant to address, since the iterator is reset on the call to `iterator`.
 
