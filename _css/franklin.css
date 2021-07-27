@@ -85,8 +85,8 @@ pre {
 .franklin-content {
   text-align: justify;
   position: relative;
-  padding-left: 0%;
-  padding-right: 0%;
+  padding-left: 5%;
+  padding-right: 5%;
   line-height: 1.5em;
 }
 
@@ -102,8 +102,8 @@ pre {
 /* On narrow device, reduce margins. */
 @media (max-width: 480px) {
   .franklin-content {
-    padding-left: 6%;
-    padding-right: 6%;
+    padding-left: 2%;
+    padding-right: 2%;
   }
 }
 
@@ -341,7 +341,7 @@ code {
   background-color: var(--block-background);
   padding: 0.1em 0.2em;
   border-radius: 2px;
-  font-size: 92%;
+  font-size: 90%;
 }
 
 /* .franklin-content code { */
