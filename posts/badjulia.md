@@ -169,7 +169,7 @@ The consensus on idiomatic Julia seem to be slowly drifting away from leaning on
 
 I expect that in the future, Julians will move even further towards Python-esque ducktyping. I predict that while there will arise packages that try to address some of these issues, they will be in disagreement about what to do, they will be niche, without good core language support, and therefore not really solve the problem.
 
-## The iterator protocol is too hard to use
+## The iterator protocol is weird and too hard to use
 ### The protocol
 By "the iterator protocol", I mean: How does a for loop work? The three languages I'm familiar with, Python, Rust and Julia, all handle this slightly different. In Julia, the following code:
 
@@ -212,9 +212,20 @@ String[]
 ```
 And since there is no way of knowing programatically (and certainly not statically) if an iterator is stateful, you better adopt a coding style that assumes all iterators are stateful, anyway.
 
-To be clear, the _problem_ isn't that Julia has stateless iterators. Stateless iterators have advantages, they may in fact be superior and preferable where possible. The real problem is that _iteration is never stateless_ - in a loop, there _must_ always be state. When using stateless iterators, the problem of keeping track of the state is not solved, but simply moved elsewhere. Julia's iterators are "stateless" in the worst possible sense of the word: That the compiler and the language doesn't know about state, and therefore offloads the job of keeping track of it to the programmer. Reasoning about state across time is a famously hard problem in programming, and with Julia's iterators, you get to feel 100% of that pain. Making the compiler's job easier by offloading work to the programmer is not how high-level languages are supposed to work!
+To be clear, the _problem_ isn't that Julia has stateless iterators. Stateless iterators have advantages, they may in fact be superior and preferable where possible. The real problem is that _iteration is never stateless_ - in a loop, there _must_ always be state. When using stateless iterators, the problem of keeping track of the state is not solved, but simply moved elsewhere. Julia's iterators are "stateless" in the worst possible sense of the word: That the compiler and the language doesn't know about state, and therefore offloads the job of keeping track of it to the programmer. Reasoning about state across time is a famously hard problem in programming, and with Julia's iterators, you get to feel 100% of that pain.
 
-For example, suppose you create an iterator that you need to process in two stages: First, you do some initialization with the first elements of the iterator. Perhaps it's an iterator of lines and you need to skip the header. After that, you iterate over the remaining arguments. You implement this as the functions `parse_header` and `parse_rest` In Julia, _you need to explicitly pass state between the functions_ - not to mention all the boilerplate code it introduces because you now can't iterate over the iterator in a for loop since that would "restart" the iterator. Well, _maybe_ it would, who knows if it's stateless!
+Making the compiler's job easier by offloading work to the programmer is not how high-level languages are supposed to work! The solution, at least not being a Julia developer, seems obvious. Iteration should instead lower to
+
+```julia
+itr = iterator(x)
+while (i = next(itr)) !== nothing
+    # stuff
+end
+```
+
+This is how Rust and Python works, approximately. Notice the code is simpler than what Julia acutally lowers to. The big advantage, however, is that the state is stored in the `itr` object, and doesn't need to be manually handled or passed around by the person implementing the iterations. Interestingly, it already solves the problem of stateful iterators that Julia's solution is meant to address, since the iterator is reset on the call to `iterator`.
+
+What are the problems with passing around state with the current approach? Suppose you create an iterator that you need to process in two stages: First, you do some initialization with the first elements of the iterator. Perhaps it's an iterator of lines and you need to skip the header. After that, you iterate over the remaining arguments. You implement this as the functions `parse_header` and `parse_rest` In Julia, _you need to explicitly pass state_ between the functions as an argument - not to mention all the boilerplate code it introduces because `parse_rest` now can't use a for loop to iterate, since that would "restart" the iterator. Well, _maybe_ it would, who knows if it's stateless!
 
 If you're a Julian reading this with scepticism, try implementing an interleaving iterator: It should take any number of iterators `x1, x2, ... xn` and produce a stream of their interleaved values: `x1_1, x2_x1, ... nx_1, x1_2 ... xn_m`. Easy peasy in Python, a headache in Julia because you have to juggle N states manually in the function. Or try re-implementing `zip` or a roundrobin iterator.
 
