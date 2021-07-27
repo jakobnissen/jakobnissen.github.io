@@ -81,15 +81,15 @@ html {
 .franklin-content {
   text-align: justify;
   position: relative;
-  padding-left: 12.5%;
-  padding-right: 12.5%;
-  line-height: 1.35em;
+  padding-left: 5%;
+  padding-right: 5%;
+  line-height: 1.55em;
 }
 
 /* On wide screens, fix content width to a max value. */
 @media (min-width: 940px) {
   .franklin-content {
-    width: 900px;
+    width: 800px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -291,10 +291,10 @@ body { counter-reset: eqnum; }
 ================================================================== */
 
 code {
+  font-family: monospace, monospace;
   background-color: var(--block-background);
   padding: 0.1em 0.2em;
   border-radius: 2px;
-  font-size: var(--small);
 }
 
 /* .franklin-content code { */
@@ -308,9 +308,9 @@ code {
 /* font-size: 90%; } */
 
 .hljs {
-  font-size: var(--small);
-  line-height: 1.35em;
+  line-height: 1.3em;
   border-radius: 10px;
+  font-size: inherit;
 }
 
 .hljs-meta,
