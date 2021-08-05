@@ -215,10 +215,12 @@ td {
 ================================================================== */
 
 .franklin-content ul {
+  text-align: left;
   padding-left: 15px;
 }
 
 .franklin-content ol {
+  text-align: left;
   padding-left: 15px;
 }
 
