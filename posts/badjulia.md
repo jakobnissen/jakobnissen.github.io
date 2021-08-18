@@ -80,7 +80,25 @@ UInt8[]
 ```
 @@
 
-I don't think it's because the Julia devs are careless, or Julia isn't well tested. It's just a matter of bugs continuously being discovered because Julia is relatively young software. As it matures and stabilizes post 1.0, the number of bugs have gone down and will continue to do so in the future. But until it does, don't expect mature, stable software when using Julia.
+Perhaps you think that reading directories as files is not really a bug, even in a high-level language. In that case, you can try collecting stateful generators:
+
+@@juliacode
+```julia
+julia> collect((i for i in Iterators.Stateful(1:3)))
+2-element Vector{Int64}:
+ 1
+ 2
+```
+@@
+
+Where Julia will silently give the objectively wrong answer. That one has been known for more than one-and-a-half years, and an issue been filed (and looked at) more than a year ago.
+
+The instability goes beyond the core language itself. Most of the times I have made PR to the Julia GitHub repository the past year or so, CI has failed for spurious reasons. In fact, when scrolling through the list of recently merged PRs, every single one of them failed CI and was merged anyway, presumably due to unstable CI.
+I know the Julia devops people are working hard on this, but it is worrying that Julia doesn't pass its own tests.
+
+A similar story can be told about Julia's package servers. Most experienced Julians know to set `JULIA_PKG_SERVER=""` if the package server gets slow. This was not documented until recently - the reason we know how to set it is because the package server so often causes trouble. For example, the Eastern US package server have had "major outage" for about 70 of the last 90 days. It's still up and running, it just serves Julia users out-of-date packages.
+
+I don't think it's because the Julia devs are careless. It's just a matter of bugs continuously being discovered because Julia is relatively young software, and because it's a big language with lots of surface for bugs. Perhaps it also comes from a culture where features come first, and tests for correctness come second. As Julia matures and stabilizes post 1.0, the number of bugs have gone down and will continue to do so in the future. But until it does, don't expect mature, stable software when using Julia.
 
 There is, however, also the issue of unstable performance, where Julia is a uniquely awkward situation. Other dynamic languages are slow, and people using them write code expecting them to be slow. Static languages are fast, because the compiler has full type information during the compilation process. If the compiler can't infer the type of something, the program won't compile. Importantly, because an inference failure in static languages causes the compilation to fail, _the compiler's inference is part of the API, and must remain stable_. Not so in Julia.
 
@@ -162,7 +180,8 @@ end
 
 A few abstract types in Julia _are_ well documented, most notably `AbstractArray` and its abstract subtypes, and it's probably no coindidence that Julia's array ecosystem is so good. But this is a singular good example, not the general pattern. Ironically, this exception is often held up as an example of why the Julia type system _works well_.
 
-Here is a fun challenge for anyone who thinks "it can't be that bad": Try to implement a `TwoWayDict`, an `AbstractDict` where if `d[a] = b`, then `d[b] = a`. In Python, which has inheritance, this is trivial. You simply subclass `dict`, overwrite a handful of its methods, and everything else works. In Julia, you have to define its data layout first - quite a drag, since dictionaries have a complicated structure (remember, you can't inherit data!). The data layout can be solved by creating a type that simply wraps a `Dict`, but the real pain of the implementation come when you must somehow figure out everything `AbstractDict` promises (good luck!) and implement that.
+Here is a fun challenge for anyone who thinks "it can't be that bad": Try to implement a `TwoWayDict`, an `AbstractDict` where if `d[a] = b`, then `d[b] = a`. In Python, which has inheritance, this is trivial. You simply subclass `dict`, overwrite a handful of its methods, and everything else works.
+In Julia, you have to define its data layout first - of course, you can solve this by simply creating a type that simply wraps a `Dict`, but the real pain of the implementation come when you must somehow figure out everything `AbstractDict` promises (good luck!) and implement that.
 
 ### Subtyping is an all-or-nothing thing
 Another problem with relying on subtyping for behaviour is that each type can only have one supertype, and it inherits _all_ of its methods. Often, that turns out to not be what you want: New types often has properties of several interfaces: Perhaps they are set-like, iterable, callable, printable, etc. But no, says Julia, pick _one_ thing. To be fair, "iterable", "callable" and "printable" are so generic and broadly useful they are not implemented using subtyping in Julia - but doesn't that say something?
@@ -255,10 +274,40 @@ If you're a Julian reading this with scepticism, try implementing an interleavin
 ## Functional programming primitives are not well designed
 I didn't really notice this until I tried Rust, and Julia's `Transducers` package, both of whom implements the foundations of functional programming (by this I mean map, filter etc.) way better than Julia itself does. This issue is not _one single_ design problem, but rather a series of smaller issues about how Julia's iterators are just... generally not that well designed.
 
-1. `map`, `filter` and `split` are eager, returning `Array`. There is _literally_ no reason for this - it only makes the code slower and less generic. I can't think of a single upside - perhaps other than that it saves you typing `collect` once in a while. Newer versions of Julia introduced `Iterators.map` and `Iterators.filter` which _are_ lazy, but using them means breaking backwards compatibility, and also, you have to use the ugly identifier `Iterators`. And for `split`, there is no such escape hatch - you just have to accept it's slow and unnecessarily allocating.
+`map`, `filter` and `split` are eager, returning `Array`. There is _literally_ no reason for this - it only makes the code slower and less generic. I can't think of a single upside - perhaps other than that it saves you typing `collect` once in a while. Newer versions of Julia introduced `Iterators.map` and `Iterators.filter` which _are_ lazy, but using them means breaking backwards compatibility, and also, you have to use the ugly identifier `Iterators`. And for `split`, there is no such escape hatch - you just have to accept it's slow and unnecessarily allocating.
 
-2. Functional programming functions like `map` and `filter` can't take functions. That is, I cannot call `map(f)` and get a "mapper" function. I usually "solve" this by defining `imap(f) = x -> Iterators.map(f, x)` in the beginning of my files, but honestly, Julia's iterators should work like this by default.
-
-3. What do you think the method `eachline(::String)` does? Does it iterate over each line of a string? Haha, no, silly you. It interprets the string as a filename, tries to open the file, and returns an iterator over its lines. _What?_ So, how do you actually iterate over the lines in a string? Well, you have to wrap the string in `IO` objects first. Yeah. that's another gripe, there is no such type as a `Path` in Julia - it just uses strings. Why not? I honestly don't know, other than perhaps the Julia devs wanted to get 1.0 out and didn't have time to implement them.
+Functional programming functions like `map` and `filter` can't take functions. That is, I cannot call `map(f)` and get a "mapper" function. I usually "solve" this by defining `imap(f) = x -> Iterators.map(f, x)` in the beginning of my files, but honestly, Julia's iterators should work like this by default.
 
 But Jakob, you say, don't you know about Takafumi Arakaki's amazing `JuliaFolds` ecosystem which reimagines Julia's iterator protocol and functional programming and gives you everything you ask for? Yes I do, and it's the best thing since sliced bread, BUT this basic functionality simply _can't_ be a package. It _needs_ to be in Base Julia. For example, if I use Arakaki's packages to create an "iterator", I can't iterate over it with a normal Julia for loop, because Julia's for loops lower to calls to `Base.iterate`. Also, because `JuliaFolds` is not Julia's default iterator implementation, and therefore sees less usage and development than Julia's built-in iterators, the package suffers from some compiler inference issues and obscure errors.
+
+## Misc gripes
+### There is no Path type
+When Julia was starting out, the core devs more or less copied Python's path API directly. Between languages to emulate, you could do worse than choosing Python - it's a language that usually has a sane, pleasant API. Unfortunately, the approach means that Julia has no type to represent a filename or a path. Instead, it uses strings. Since Julia is otherwise pretty good about being strongly typed, this is a real shame.
+
+Why is _that_ bad? Aren't paths strings, really? Emphatically, no. They happen to be stored in memory as strings, but its internal storage is incidental - _conceptually_, paths are a different thing than strings. It is no different from how a `DateTime` is not an `Int`, and a `UUID` is not an `UInt128`, and an enum is not an integer.
+
+Just like any other case of weak typing, the lack of a proper path type has real consequences, too:
+
+First, it's annoying for static analysis that you can't specify that a particular value is a path, and that you shouldn't try to convert it to titlecase it or something silly like that. That same lack of information extends to the user: A function signature that takes `AbstractPath` is immediately obvious, whereas it's not clear that an `AbstractString` actually represents a path. I've seen real code where the same value encoded as a `String` could refer to _either_ a URL, or a path, depending on its interpretation, leaving it up to the programmer to keep track of what type the value _really_ was at any given time.
+
+Second, and more importantly, it means lots of functionality simply isn't implemented for paths in Julia, because the developers never had the need, as they could just get away with using strings: How do you verify a path is validly formatted on your system? How can you tell if a path is relative? And how do you deal with operating system differences? All these questions are basically unanswered, because every developer needs to implement solutions for these issues by themselves, in every application.
+
+In contrast, if there were a single `Path` type, its constructor would be validating, and all the weird edge cases about paths would need to be encoded into the object at the type level, making it much easier for developers. Again, it's hard not to look at Rust for a great example. Rust's paths are hard to deal with, because _paths are hard to deal with_, but most of the hard stuff has already been done for you.
+
+Last, it's pretty remarkable that the functions that operate on Julia's paths all have names like `isabspath`, `isdirpath`, `joinpath`, `mkpath`, `normpath`, `splitpath` etc - all containing the word `path`. Essentially no other Julia functions are named like that: We have no `transposematrix`, `mulnumber`, `reversestring`, `maparray`. It should be obvious when you start to encode type information into your function names that you need a new type.
+
+Speaking of which, what do you then do when a function has two different meanings depending on whether the argument is a string or a path? For example, the method `countlines(::String)` could either count the lines in the string, or it could treat the string as a path and count the lines in the file at that path. Remarkably, and counter-intuitively, it does the latter. I guess the path-implementation was just finished first, and now the former cannot be implemented because the method is already taken.
+
+### No option type
+All languages has to deal with the concept of "this function either gives a result, or no result". Historically, languages has dealth with this differently: Return codes, or special magic values, or by throwing exceptions that are expected to get caugt (e.g. Python's `StopIteration`).
+
+At this point in time, I think it is clear that the best solution to this problem is returning a value with the success encoded in the type system, like e.g. Haskell/Clojure's `Maybe`, or Rust's `Option<T>`. These kinds of types are called _sum types_ (or _tagged unions_). Annoyingly, Julia does not have such a type.
+
+Well, it kind of does... sort of. Julia has union types, and it's custom for these failable functions to return `Union{T, Nothing}`. The advantages and disadvantages of union types versus sum types is a whole topic on its own, so I'll just touch on two problems with Julia's approach here.
+
+First, sum types _forces_ the user to deal with potential failure, because the result needs to be unwrapped, whereas union types can hide the error state, such that it seemingly works, until it suddenly doesn't. Which happens a lot in Julia - even Base Julia had, until the advent of static type checking, lots of places where these failure states were not handled. My positive experience with sum types after learning Rust led me to create [ErrorTypes.jl](https://github.com/jakobnissen/ErrorTypes.jl), but being a package, it obviously only works for code that chooses to use it.
+
+Second, sometimes, `nothing` is used as a valid value in Julia, and then it all comes crashing down, because `Union{Nothing, Nothing}` is just `Nothing`! In that case, it becomes impossible to tell if an operation succeeded or not. The "standard" solution when `nothing` can be a valid result is to instead use `Union{Some{T}, Nothing}` as the return value. But of course, the person implementing the function often does not know whether `nothing` is a valid value!
+
+For example, suppose `d` is a `Dict{Any, Int}`, and I check for odd-numbered values by doing `findfirst(isodd, d)`, and it returns `nothing`. It is impossible to tell if the key `nothing` had an odd value, or if there were no odd-valued keys!
+
