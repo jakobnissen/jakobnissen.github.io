@@ -13,8 +13,14 @@
     DEFAULT FONT AND LAYOUT
 ================================================================== */
 
+@font-face {
+  font-family: DejaVu;
+  src: url("/assets/DejaVuSerif.woff2") format("woff2");
+}
+
+
 html {
-  font-family: Garamond, serif;
+  font-family: DejaVu, serif;
   font-size: var(--normal);
   color: var(--text-color);
 }
