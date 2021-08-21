@@ -92,12 +92,18 @@ pre {
   margin: 0.6rem 0;
 }
 
+p {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  
+}
+
 .franklin-content {
   text-align: justify;
   position: relative;
   padding-left: 5%;
   padding-right: 5%;
-  line-height: 1.5em;
+  line-height: 1.8em;
 }
 
 /* On wide screens, fix content width to a max value. */
