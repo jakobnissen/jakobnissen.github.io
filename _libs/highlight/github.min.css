@@ -1,4 +1,4 @@
-.hljs { display: block; font-size: 14px; line-height: 1.45em; overflow-x: auto; padding: 0.5em; color: var(--text-color); background: var(--block-background); }
+.hljs { display: block; font-size: 15px; line-height: 1.45em; overflow-x: auto; padding: 0.5em; color: var(--text-color); background: var(--block-background); }
 
 .hljs-comment,
 .hljs-quote { color: #998; font-style: italic; }
