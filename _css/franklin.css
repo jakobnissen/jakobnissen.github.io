@@ -295,7 +295,7 @@ td {
 }
 
 .franklin-content .fndef tr {
-  border-left: 2px solid lightgray;
+  border-left: 4px solid lightgray;
 }
 
 .franklin-content .fndef td.fndef-backref {
