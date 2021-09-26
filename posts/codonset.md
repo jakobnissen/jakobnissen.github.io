@@ -39,7 +39,7 @@ Since there are $4^3 = 64$ different codons and only 20 amino acids, some amino 
 Part of the reason for degeneracy is [wobble base pairs](https://en.wikipedia.org/wiki/Wobble_base_pair):
 The physical mechanism used by the ribosome to match codons with amino acids is not precise due to the physical construction of the ribosome, causing some codons to match with the "wrong", or rather, imperfectly specified amino acid.
 
-As a side note, I find it interesting to which extend the genetic code is arbitrary, and to which extend it is constrained by physical processes like wobbling.
+As a side note, I find it interesting to which extent the genetic code is arbitrary, and to which extent it is constrained by physical processes like wobbling.
 While I'm not too much into the literature on this topic, the consensus seem to be that while there are some constraints, the huge amount of possible genetic codes would make it exceedingly unlikely that the same, or almost same, genetic code evolved twice independently.
 And yet, all life forms use the same genetic code, from anteaters to subterranean bacteria.
 This is pretty good evidence that all life on earth descends from a single common ancestor.
@@ -85,7 +85,7 @@ CodonSet() = CodonSet(UInt64(0))
 ```
 @@
 
-We subtyped `AbstractSet`, so we need to implement quite a few methods for it to work properly a,d feel like a real set type to the user.
+We subtyped `AbstractSet`, so we need to implement quite a few methods for it to work properly and feel like a real set type to the user.
 First two basic functions:
 The length of a `CodonSet` is the number of set bits in the integer. This can be counted using a single `popcntq` CPU instruction, available with the Base function `count_ones`:
 
@@ -262,7 +262,7 @@ BioSequences.GeneticCode <: AbstractDict{Mer{RNAAlphabet{2}, 3}, AminoAcid}
 ```
 @@
 
-It's a glorified lookup-table: Each input codon is reinterpreted as an integer and used to look up the corresponding amino acid the vector.
+It's a glorified lookup-table: Each input codon is reinterpreted as an integer and used to look up the corresponding amino acid in the vector.
 We *could* use the existing `GeneticCode` object to do reverse translation, but for each amino acid, we would have to traverse the vector and find all the codons that code for that particular amino acid.
 Instead, let's make a new object:
 
