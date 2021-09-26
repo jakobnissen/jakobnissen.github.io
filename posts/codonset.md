@@ -9,6 +9,8 @@ It's nice because it's small and simple, contains some real biology, and shows h
 This post is a kind of live "coding session". Or, not live, just a coding session.
 There is no grand point to be made - just a walkthrough of a satisfying implementation.
 
+If you want to follow along, you can find the code (with slight modifications) [here (click)](https://github.com/jakobnissen/play/blob/master/revtrans.jl).
+
 ## Background
 The basic flow of genetic information is identical for all living cells on earth[^1] :
 The genome is stored as DNA, a chemically stable molecule fit for long-term storage.
@@ -353,7 +355,6 @@ end
 @@
 
 And... we're done!
-You can find the code (with slight modifications not terribly relevant) [here (click)](https://github.com/jakobnissen/play/blob/master/revtrans.jl).
 
 > Just one second! `N_AA == 28`. But you've only dealt with the 20 amino acids of the genetic code so far!
 
