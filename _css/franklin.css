@@ -422,3 +422,10 @@ code {
   border: 1px solid blue;
   border-radius: 10px;
 }
+
+.rustcode {
+  --block-background: #fff8f8;
+  color: #inherit;
+  border: 1px solid orange;
+  border-radius: 10px;
+}
