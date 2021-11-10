@@ -9,29 +9,47 @@
 
   <channel>
     <title>
-      <![CDATA[  Franklin Template  ]]>
+      <![CDATA[  viralinstruction  ]]>
     </title>
-    <link> https://tlienart.github.io/FranklinTemplates.jl/ </link>
+    <link> https://viralinstruction.com/ </link>
     <description>
-      <![CDATA[  Example website using Franklin  ]]>
+      <![CDATA[  A blog about programming, mostly, and sometimes biology.  ]]>
     </description>
     <atom:link
-      href="https://tlienart.github.io/FranklinTemplates.jl/feed.xml"
+      href="https://viralinstruction.com/feed.xml"
       rel="self"
       type="application/rss+xml" />
 
 
 <item>
   <title>
-    <![CDATA[  More goodies  ]]>
+    <![CDATA[  What scientists must know about hardware to write fast code   ]]>
   </title>
-  <link>  </link>
-  <guid>  </guid>
+  <link> https://viralinstruction.com/posts/hardware/ </link>
+  <guid> https://viralinstruction.com/posts/hardware/ </guid>
   <description>
-    <![CDATA[  A short description of the page which would serve as <strong>blurb</strong> in a <code>RSS</code> feed; you can use basic markdown here but the whole description string must be a single line &#40;not a multiline string&#41;. Like this one for instance. Keep in mind that styling is minimal in RSS so for instance don&#39;t expect maths or fancy styling to work; images should be ok though: <img src="https://upload.wikimedia.org/wikipedia/en/b/b0/Rick_and_Morty_characters.jpg" alt="" />  ]]>
+    <![CDATA[  An introduction to the most essential elements of low-level computing and how it affects code performance.  ]]>
+  </description>
+
+  <pubDate>Wed, 04 Aug 2021 00:00:00 +0000</pubDate>
+
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+
+</item>
+
+<item>
+  <title>
+    <![CDATA[  Union vs sum types  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/uniontypes/index.html </link>
+  <guid> https://viralinstruction.com/posts/uniontypes/index.html </guid>
+  <description>
+    <![CDATA[  A brief explanation of union types, sum types, and how they relate and compare.  ]]>
   </description>  
     
-  <pubDate>Wed, 01 May 2019 00:00:00 +0000</pubDate>  
+  <pubDate>Wed, 06 Oct 2021 00:00:00 +0000</pubDate>  
   
   
   <atom:author>
@@ -42,15 +60,34 @@
 
 <item>
   <title>
-    <![CDATA[  Code blocks  ]]>
+    <![CDATA[  Implementing reverse translation  ]]>
   </title>
-  <link> https://tlienart.github.io/FranklinTemplates.jl/menu1/index.html </link>
-  <guid> https://tlienart.github.io/FranklinTemplates.jl/menu1/index.html </guid>
+  <link> https://viralinstruction.com/posts/codonset/index.html </link>
+  <guid> https://viralinstruction.com/posts/codonset/index.html </guid>
   <description>
-    <![CDATA[  A short description of the page which would serve as <strong>blurb</strong> in a <code>RSS</code> feed; you can use basic markdown here but the whole description string must be a single line &#40;not a multiline string&#41;. Like this one for instance. Keep in mind that styling is minimal in RSS so for instance don&#39;t expect maths or fancy styling to work; images should be ok though: <img src="https://upload.wikimedia.org/wikipedia/en/3/32/Rick_and_Morty_opening_credits.jpeg" alt="" />  ]]>
+    <![CDATA[  A walkthrough of a small, very satisfying Julia implementation of a cute biological problem.  ]]>
   </description>  
     
-  <pubDate>Fri, 22 Mar 2019 00:00:00 +0000</pubDate>  
+  <pubDate>Sat, 25 Sep 2021 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
+    <![CDATA[  What&#39;s bad about Julia?  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/badjulia/index.html </link>
+  <guid> https://viralinstruction.com/posts/badjulia/index.html </guid>
+  <description>
+    <![CDATA[  A mega-rant about all the things I find bad about Julia.  ]]>
+  </description>  
+    
+  <pubDate>Sun, 25 Jul 2021 00:00:00 +0000</pubDate>  
   
   
   <atom:author>
