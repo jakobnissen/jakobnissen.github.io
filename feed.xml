@@ -15,6 +15,11 @@
     <description>
       <![CDATA[  A blog about programming, mostly, and sometimes biology.  ]]>
     </description>
+    <image>
+      <url>https://viralinstruction.com/assets/v.png</url>
+      <title>viralinstruction</title>
+      <link> https://viralinstruction.com/ </link>
+    </image>
     <atom:link
       href="https://viralinstruction.com/feed.xml"
       rel="self"
