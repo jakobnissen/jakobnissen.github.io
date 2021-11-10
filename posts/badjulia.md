@@ -1,3 +1,6 @@
+@def rss = "A mega-rant about all the things I find bad about Julia."
+@def rss_pubdate = Dates.Date(2021, 07, 25)
+
 # What's bad about Julia?
 _Written 2021-07-25, updated {{fd_mtime_raw}}_
 

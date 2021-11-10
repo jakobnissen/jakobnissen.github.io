@@ -1,3 +1,6 @@
+@def rss = "A walkthrough of a small, very satisfying Julia implementation of a cute biological problem."
+@def rss_pubdate = Dates.Date(2021, 09, 25)
+
 # Implementing reverse translation
 
 I quite like writing high-performance bioinformatics code.

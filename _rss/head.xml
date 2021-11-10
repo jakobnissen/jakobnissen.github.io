@@ -31,6 +31,28 @@ rss_file variable in your config file if you want to use something different tha
       href="{{fd_rss_feed_url}}"
       rel="self"
       type="application/rss+xml" />
+
+<!--
+Manually added item because this is not an MD file generated
+by Franklin
+-->
+<item>
+  <title>
+    <![CDATA[  What scientists must know about hardware to write fast code   ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/hardware/ </link>
+  <guid> https://viralinstruction.com/posts/hardware/ </guid>
+  <description>
+    <![CDATA[  An introduction to the most essential elements of low-level computing and how it affects code performance.  ]]>
+  </description>
+
+  <pubDate>Wed, 04 Aug 2021 00:00:00 +0000</pubDate>
+
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+
+</item>
 <!--
 * items will be added here in chronological order
 * the channel will then be closed

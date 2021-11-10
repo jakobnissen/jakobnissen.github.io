@@ -1,3 +1,6 @@
+@def rss = "A brief explanation of union types, sum types, and how they relate and compare."
+@def rss_pubdate = Dates.Date(2021, 10, 06)
+
 # Union vs sum types
 _Written 2021-10-06_
 
