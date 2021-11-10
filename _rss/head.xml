@@ -27,6 +27,11 @@ rss_file variable in your config file if you want to use something different tha
     <description>
       <![CDATA[  {{fd2rss website_description}}  ]]>
     </description>
+    <image>
+      <url>https://viralinstruction.com/assets/v.png</url>
+      <title>viralinstruction</title>
+      <link> {{website_url}} </link>
+    </image>
     <atom:link
       href="{{fd_rss_feed_url}}"
       rel="self"
