@@ -285,20 +285,26 @@ But Jakob, you say, don't you know about Takafumi Arakaki's amazing `JuliaFolds`
 
 ## Misc gripes
 ### There is no Path type...
-When Julia was first being written, the core devs more or less copied Python's path API directly. Of all the languages you could, you could have picked worse than Python - the language usually has a sane, pleasant API. Unfortunately, for path specifically, Julia also inherited Python's sin of using strings to represent filenames and paths. Since Julia is otherwise pretty good about being strongly typed, this design decision is unfortunate.
+When Julia was first being written, the core devs more or less copied Python's path API directly.
+Of all the languages you could have imitated, you could have picked worse than Python - the language usually has a sane, pleasant API.
+Unfortunately, for path specifically, Julia also inherited Python's sin of using strings to represent filenames and paths.
+Since Julia is otherwise pretty good about being strongly typed, this design decision is unfortunate.
 
-"What's the problem", you might ask, "aren't paths just strings applied to the filesystem"? No, they _absolutely aren't_. Paths may be printed like a string, and may even use a string as internal storage, but that is incidental: Paths are _conceptually different_ from strings, and need their own type.
-`DateTime`s are represented by an `Int`, but are _not_ integers, and `Char`s are not 32-bit integers even if they can be represented by them. The important thing is not what they look like to the CPU, but how the behave to the programmer. 
+"What's the problem", you might ask, "aren't paths just strings applied to the filesystem?" No, they _absolutely aren't_.
+Paths may be printed like a string, and may even use a string as internal storage, but that is incidental: Paths are _conceptually different_ from strings, and need their own type.
+`DateTime`s are represented by an `Int`, but are _not_ integers, and `Char`s are not 32-bit integers even if they can be represented by them.
+The important thing is not what they look like to the CPU, but how the behave to the programmer. 
 
 Conflating the behaviour of strings and paths just because they look similar is an example of weak typing, causes a bunch of problems:
 
-First, linting and static analysis of paths become limited because you can't specify that a particular value is a path, and that you shouldn't try to convert it to titlecase it or reverse it, or something silly like that. That same lack of information extends to the programmer: The behaviour of an argument annotated as `AbstractPath` is immediately obvious, whereas it's not clear that an `AbstractString` actually represents a path.
-I've seen real code where the same value encoded as a `String` could refer to _either_ an URL, or a path, depending on its interpretation, leaving it up to the programmer to keep track of what type the value _really_ was at any given time.
+First, linting and static analysis of paths become limited because you can't specify that a particular value is a path, and that you shouldn't try to convert it to titlecase it or reverse it, or something silly like that.
+That same lack of information extends to the programmer: The behaviour of an argument annotated as `AbstractPath` is immediately obvious, whereas it's not clear that an `AbstractString` actually represents a path.
+I've seen real code where the same value encoded as a `String` could refer to _either_ a URL, or a path, depending on the current state of the function, leaving it up to the programmer to keep track of what type the value _really_ was at any given time.
 
 Second, and more importantly, it means lots of functionality simply isn't implemented for paths in Julia, because the developers never had the need, as they could just get away with using strings:
 How do you verify a path is validly formatted on your system? How can you tell if a path is relative? These questions, and more, are basically unanswered in Julia, because every developer needs to implement solutions for these issues by themselves, in every application.
 
-In contrast, if there were a single `Path` type, its constructor would be validating, and all the weird and annoying edge cases about paths would need to be encoded into the object at the type level, making it much easier for developers. Again, it's hard not to look at Rust for a great example. Rust's paths are complicated to deal with, because _paths are complicated to deal with_. But the complexity is tackled head-on, and most of the hard stuff had already been done through you.
+In contrast, if there were a single `Path` type, its constructor would be validating, and all the weird and annoying edge cases about paths would need to be encoded into the object at the type level, making things much easier for developers. Again, it's hard not to look at Rust for a great example. Rust's paths are complicated to deal with, because _paths are complicated to deal with_. But the complexity is tackled head-on, and most of the hard stuff had already been done for you by better programmers.
 
 Last, it's pretty remarkable that the functions that operate on Julia's paths all have names like `isabspath`, `isdirpath`, `joinpath`, `mkpath`, `normpath`, `splitpath` etc - all containing the word `path`. Essentially no other Julia functions are named like that: We have no `transposematrix`, `mulnumber`, `reversestring`, `maparray`.
 Why don't we? Because, when you start to encode type information into your function names, it should be obvious that you need a new type.
