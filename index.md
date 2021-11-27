@@ -5,5 +5,6 @@ Hi! I'm Jakob, a researcher-programmer working in bioinformatics. I write about 
 # Posts
 * [Union vs sum types](/posts/uniontypes)
 * [Implementing reverse translation](/posts/codonset)
+* [Advent of Code 2021: Day 1](/posts/aoc2021_1)
 * [What scientists should know about hardware to write fast code](/posts/hardware)
 * [What's bad about Julia?](/posts/badjulia)
