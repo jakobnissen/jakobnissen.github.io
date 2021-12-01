@@ -1,36 +1,36 @@
-<!doctype html> <html lang=en > <meta charset=UTF-8 > <meta name=viewport  content="width=device-width, initial-scale=1"> <link rel=stylesheet  href="/libs/highlight/github.min.css"> <link rel=stylesheet  href="/css/franklin.css"> <link rel=stylesheet  href="/css/basic.css"> <link rel=icon  href="/assets/v.svg"> <title>Advent of Code 2021, day 1</title> <header> <div class=blog-name ><a href="/">viralinstruction</a></div> <nav> <ul> <li><a href="/">Home</a> <li><a href="/about/">About</a> <li><a href="/feed.xml">RSS</a> </ul> <img src="/assets/hamburger.svg" id=menu-icon > </nav> </header> <div class=franklin-content ><h1 id=advent_of_code_2021_day_1 ><a href="#advent_of_code_2021_day_1" class=header-anchor >Advent of Code 2021, day 1</a></h1> <p><em>Written 2021-12-01</em></p> <p>This year&#39;s <a href="https://adventofcode.com/">Advent of Code</a> has begun, meaning that ♪&#39;tis the season to be coding♪. AoC is a <em>great</em> opportunity to learn a new programming language or new set of programming tools. For example, you could use this year&#39;s AoC to learn... oh, I don&#39;t know, <a href="https://julialang.org/">Julia</a>?</p> <p>Great choice&#33; You&#39;ve come to the right place. In this post, I will be showing you how I&#39;ve solved <a href="https://adventofcode.com/2021/day/1">the day 1 puzzle</a> in Julia. The day 1 puzzle is not very challenging, so this post is <em>really</em> about how best to get started coding a project using Julia.</p> <h2 id=setting_up_your_project ><a href="#setting_up_your_project" class=header-anchor >Setting up your project</a></h2> <p>You&#39;ll want to <a href="https://julialang.org/downloads/#current_stable_release">install Julia first</a> &#40;of course&#41;, and some kind of editor. I recommend <a href="https://code.visualstudio.com/">VS Code</a>, because it currently has the best Julia IDE, but editors can be an, uh, <a href="https://en.wikipedia.org/wiki/Editor_war">touchy subject</a>, so you just pick your favourite. If you choose VS Code you&#39;ll also want to install the <a href="https://www.julia-vscode.org/">julia extension</a> - just get the extension called &quot;julia&quot;.</p> <p>To solve the 24 Advent of Code puzzles, We <em>could</em> just make a series of scripts, but let&#39;s do it the <em>right</em> way and instead create a new Julia project for this year&#39;s AoC. We can then have one source file per day. To do this, launch Julia, then type <code>&#93;</code> to enter <code>Pkg</code> mode, then type:</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;@v1.6&#41; pkg&gt; generate AoC2021
+<!doctype html> <html lang=en > <meta charset=UTF-8 > <meta name=viewport  content="width=device-width, initial-scale=1"> <link rel=stylesheet  href="/libs/highlight/github.min.css"> <link rel=stylesheet  href="/css/franklin.css"> <link rel=stylesheet  href="/css/basic.css"> <link rel=icon  href="/assets/v.svg"> <title>Advent of Code 2021, day 1</title> <header> <div class=blog-name ><a href="/">viralinstruction</a></div> <nav> <ul> <li><a href="/">Home</a> <li><a href="/about/">About</a> <li><a href="/feed.xml">RSS</a> </ul> <img src="/assets/hamburger.svg" id=menu-icon > </nav> </header> <div class=franklin-content ><h1 id=advent_of_code_2021_day_1 ><a href="#advent_of_code_2021_day_1" class=header-anchor >Advent of Code 2021, day 1</a></h1> <p><em>Written 2021-12-01</em></p> <p>This year&#39;s <a href="https://adventofcode.com/">Advent of Code</a> has begun, meaning that ♪&#39;tis the season to be coding♪. AoC is a <em>great</em> opportunity to learn a new programming language or new set of programming tools. For example, you could use this year&#39;s AoC to learn... oh, I don&#39;t know, <a href="https://julialang.org/">Julia</a>?</p> <p>Great choice&#33; You&#39;ve come to the right place. In this post, I will be showing you how I&#39;ve solved <a href="https://adventofcode.com/2021/day/1">the day 1 puzzle</a> in Julia.</p> <p>The day 1 puzzle is not very challenging. But because this post is <em>really</em> about how best to get started coding a project using Julia, with unit tests and benchmarks and the whole shebang, the solution will be wildly over-engineered.</p> <h2 id=setting_up_your_project ><a href="#setting_up_your_project" class=header-anchor >Setting up your project</a></h2> <p>You&#39;ll want to <a href="https://julialang.org/downloads/#current_stable_release">install Julia first</a> &#40;of course&#41;, and some kind of editor. I recommend <a href="https://code.visualstudio.com/">VS Code</a>, because it currently has the best Julia IDE, but editors can be an, uh, <a href="https://en.wikipedia.org/wiki/Editor_war">touchy subject</a>, so you just pick your favourite. If you choose VS Code you&#39;ll also want to install the <a href="https://www.julia-vscode.org/">julia extension</a> - just get the extension called &quot;julia&quot;.</p> <p>To solve the 24 Advent of Code puzzles, We <em>could</em> just make a series of scripts, but let&#39;s do it the <em>right</em> way and instead create a new Julia project for this year&#39;s AoC. We can then have one source file per day. To do this, launch Julia, then type <code>&#93;</code> to enter <code>Pkg</code> mode, then type:</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;@v1.6&#41; pkg&gt; generate AoC2021
   Generating  project AoC2021:
     AoC2021/Project.toml
-    AoC2021/src/AoC2021.jl</code></pre></div> <p>This is the part where some people grimace in disgust: I&#39;m using <em>the REPL</em> to initialize a project from within Julia? Why not simply do it from the shell?</p> <p>Right, about that... When developing Julia, it is <em>possible</em> to run all your commands from the shell, but I strongly recommend you don&#39;t do that, and work from the REPL instead. For some people, this may be a jarring shift in your normal development workflow, I know. But when in Rome, do as the Romans - Julia&#39;s development experience really does work better when you interact with it from the REPL. If it makes it easier, you can use the Julia REPL in the VSCode terminal.</p> <p>With your open REPL, navigate to the <code>AoC2021</code> directory you just created &#40;type &#39;;&#39; to enter shell mode&#41;, enter package mode and execute <code>activate</code> to have the package manager activate the project. If it works, you should see the prompt look like</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt;</code></pre></div>
+    AoC2021/src/AoC2021.jl</code></pre></div> <p>This is the part where some people grimace in disgust: I&#39;m using <em>the REPL</em> to initialize a project from within Julia? Why not simply do it from the shell?</p> <p>Right, about that... When developing Julia, it is <em>possible</em> to run all your commands from the shell, but I strongly recommend you don&#39;t do that, and work from the REPL instead. For some people, this may be a jarring shift in your normal development workflow, I know. But when in Rome, do as the Romans - Julia&#39;s development experience really does work better when you interact with it from the REPL. If it makes it easier, you can use the Julia REPL in the VSCode terminal.</p> <p>With your open REPL, navigate to the <code>AoC2021</code> directory you just created &#40;type &#39;;&#39; to enter shell mode&#41;, enter package mode and execute <code>activate .</code> &#40;note the trailing dot for &quot;this directory&quot;&#33;&#41; to have the package manager activate the project. If it works, you should see the prompt look like</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt;</code></pre></div>
 <p>You can then use backspace to get back to the <code>julia&gt;</code> REPL mode. Okay, so currently our directory looks like:</p>
 <div class=shellcode ><pre><code class=language-plaintext >&#36; exa -T
 .
 ├── Project.toml
 └── src
    └── AoC2021.jl</code></pre></div>
-<p>Let&#39;s add a <code>data</code> directory and add today&#39;s input file in that. We also add a new <code>day1.jl</code> file in the <code>src</code> directory for today&#39;s code, and make the toplevel project file <code>AoC2021.jl</code> file <code>include</code> the new file. The directory structure is now:</p>
+<p>Let&#39;s add a <code>data</code> directory and add today&#39;s input file in that. We also add a new <code>day01.jl</code> file in the <code>src</code> directory for today&#39;s code, and make the toplevel project file <code>AoC2021.jl</code> file <code>include</code> the new file. The directory structure is now:</p>
 <div class=shellcode ><pre><code class=language-plaintext >&#36; exa -T
 .
 ├── data
-│  └── day1.txt
+│  └── day01.txt
 ├── Project.toml
 └── src
    ├── AoC2021.jl
-   └── day1.jl</code></pre></div>
+   └── day01.jl</code></pre></div>
 <p>And the main file <code>AoC2021.jl</code> contains:</p>
 <div class=juliacode ><pre><code class=language-plaintext >module AoC2021
 
-include&#40;&quot;day1.jl&quot;&#41;
+include&#40;&quot;day01.jl&quot;&#41;
 
 end # module</code></pre></div>
 <p>Let&#39;s also make the directory a git repository - that&#39;s always a good idea when developing:</p>
 <div class=shellcode ><pre><code class=language-plaintext >&#36; git init</code></pre></div>
 <p>and add the following to <code>.gitignore</code>:</p>
-<div class=shellcode ><pre><code class=language-plaintext >/Manifest.toml
-/data</code></pre></div>
-<p>We don&#39;t want to waste <em>kilobytes</em> by tracking the data directory &#40;and in any case, different people get different challenge inputs&#41;. We also ignore the <code>Manifest.toml</code> file. It contains the resolved dependency graph of the project, and hence is a machine-generated file used by Julia package manager. It&#39;s useful when you need to <em>completely</em> specify the environment, such as when doing reproducible science, but otherwise it&#39;s not meant to be shared between users. The <code>Project.toml</code> should contain the relevant information about compatibilities etc. If you are familiar with Rust, <code>Project.toml</code> and <code>Manifest.toml</code> correspond to <code>Cargo.toml</code> and <code>Cargo.lock</code>, respectively.</p>
-<p>Now, we can begin to look at today&#39;s challenge. The structure of the file <code>day1.jl</code> will be like this:</p>
-<div class=juliacode ><pre><code class=language-plaintext >module day1
+<div class=shellcode ><pre><code class=language-plaintext >/data</code></pre></div>
+<p>We don&#39;t want to waste <em>kilobytes</em> by tracking the data directory &#40;and in any case, different people get different challenge inputs&#41;. Normally, when developing Julia packages, we would also ignore the <code>Manifest.toml</code> file which we will soon create with the Julia package manager. See where the <code>Project.toml</code> file is used the specify dependencies and compatibility bounds for a package, <code>Manifest.toml</code> contains the resolved dependency graph of the project. If you are familiar with Rust, <code>Project.toml</code> and <code>Manifest.toml</code> correspond to <code>Cargo.toml</code> and <code>Cargo.lock</code>, respectively. The <code>Manifest.toml</code> file can be used if the user needs to reconstruct an environment <em>precisely</em>, for example when doing reproducible science. When developing packages, you usually <em>don&#39;t</em> want to completely specify an environment. Instead you want your package to be usable in a broad range of environments. And so, normally, the manifest is ignored with version control.</p>
+<p>However, in our case, an Advent of Code challenge is one of those cases where you might want to have the full environment, so here, we keep the manifest.</p>
+<p>Now, we can begin to look at today&#39;s challenge. The structure of the file <code>day01.jl</code> will be like this:</p>
+<div class=juliacode ><pre><code class=language-plaintext >module day01
 
 function solve&#40;io::IO&#41;
 	# code goes here...
@@ -55,16 +55,16 @@ end # module</code></pre></div>
 
 using ReTest
 
-include&#40;&quot;day1.jl&quot;&#41;
+include&#40;&quot;day01.jl&quot;&#41;
 
 end # module</code></pre></div>
-<p>and also import it at the top of the <code>day1</code> file using a relative import &#40;so it imports it from the top-level module&#41;:</p>
-<div class=juliacode ><pre><code class=language-plaintext >module day1
+<p>and also import it at the top of the <code>day01</code> file using a relative import &#40;so it imports it from the top-level module&#41;:</p>
+<div class=juliacode ><pre><code class=language-plaintext >module day01
 
 using ..ReTest
 
 &#91; rest of file elided &#93;</code></pre></div>
-<p>We now add some tests near the bottom of the <code>day1.jl</code> file. AoC helpfully provides us with a small test example in the project description. Let&#39;s make that a constant in the code:</p>
+<p>We now add some tests near the bottom of the <code>day01.jl</code> file. AoC helpfully provides us with a small test example in the project description. Let&#39;s make that a constant in the code:</p>
 <div class=juliacode ><pre><code class=language-plaintext >const TEST_STRING &#61; &quot;&quot;&quot;1721
 979
 366
@@ -87,10 +87,10 @@ end</code></pre></div>
 
 julia&gt; AoC2021.runtests&#40;&#41;
                        Pass  
-Main.AoC2021.day1:
+Main.AoC2021.day01:
   sum_elements     |      6</code></pre></div>
 <h2 id=adding_static_analysis ><a href="#adding_static_analysis" class=header-anchor >Adding static analysis</a></h2>
-<p>After having tested, we can be fairly sure it works as we expect. However, writing a comprehensive test suite that covers all the edge cases is difficult. To be a little more confident our program is well-behaved, we can analyze the behaviour statically.</p>
+<p>After having tested, we can be fairly sure it works as we expect. However, writing a comprehensive test suite that covers all the edge cases is difficult. To be a little more confident our program is well-behaved, we can analyze the behaviour statically. Of course for projects as tiny as one Advent of Code day, there really isn&#39;t much point to static analysis, but let me show you anyway:</p>
 <p>For this, I use the package <code>JET.jl</code>. We don&#39;t need it as part of the <code>AoC2021</code> project, so I install the package to the default environment instead:</p>
 <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt; activate
   Activating environment at &#96;~/.julia/environments/v1.6/Project.toml&#96;
@@ -104,7 +104,7 @@ Main.AoC2021.day1:
 <p>Here, for example, I analyze on the type-level how the main function behaves when called with an <code>IOBuffer</code>:</p>
 <div class=juliacode ><pre><code class=language-plaintext >julia&gt; using JET
 
-julia&gt; @report_call AoC2021.day1.solve&#40;IOBuffer&#40;&#41;&#41;
+julia&gt; @report_call AoC2021.day01.solve&#40;IOBuffer&#40;&#41;&#41;
 No errors &#33;
 Union&#123;Nothing, Int64&#125;</code></pre></div>
 <p>No errors&#33; Whew&#33;</p>
@@ -121,7 +121,7 @@ Union&#123;Nothing, Int64&#125;</code></pre></div>
 &#40;@v1.6&#41; pkg&gt; activate .
   Activating environment at &#96;~/code/AoC2021/Project.toml&#96;</code></pre></div>
 <p>Now we can benchmark a function call like so:</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; @benchmark open&#40;AoC2021.day1.solve, &quot;data/day1.txt&quot;&#41;
+<div class=juliacode ><pre><code class=language-plaintext >julia&gt; @benchmark open&#40;AoC2021.day01.solve, &quot;data/day01.txt&quot;&#41;
 BenchmarkTools.Trial: 1609 samples with 1 evaluation.
  Range &#40;min … max&#41;:  2.843 ms …   6.682 ms  ┊ GC &#40;min … max&#41;: 0.00&#37; … 0.00&#37;
  Time  &#40;median&#41;:     2.880 ms               ┊ GC &#40;median&#41;:    0.00&#37;
@@ -133,9 +133,21 @@ BenchmarkTools.Trial: 1609 samples with 1 evaluation.
 
  Memory estimate: 16.16 KiB, allocs estimate: 420.</code></pre></div>
 <p>&#40;or get just the minimum time using <code>@btime</code>&#41;. Those times include reading and parsing the input file. Not too unreasonable&#33;</p>
+<h2 id=the_easy_way ><a href="#the_easy_way" class=header-anchor >The easy way</a></h2>
+<p>Setting up the whole environment and tests and such was a lot of work. Does it really have to be that complicated to code in Julia?</p>
+<p>No&#33; A more typical Julia solution for day one could simply be a script with:</p>
+<div class=juliacode ><pre><code class=language-plaintext >function main&#40;path&#41;
+    v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;path&#41;&#93;
+    for n in &#40;2, 3&#41;, i in Iterators.product&#40;v, n&#41;
+        sum&#40;i&#41; &#61;&#61; 2020 &amp;&amp; println&#40;prod&#40;i&#41;&#41;
+    end
+    Iterators.product&#40;v, 3&#41; |&gt; filter
+end
+
+main&#40;ARGS&#91;1&#93;&#41;</code></pre></div>
 <div class=page-foot >
   <div class=copyright >
-    Jakob Nybo Nissen. Last modified: November 27, 2021. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
+    Jakob Nybo Nissen. Last modified: December 01, 2021. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
   </div>
 </div>
 </div>
