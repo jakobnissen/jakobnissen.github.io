@@ -1,7 +1,7 @@
-<!doctype html> <html lang=en > <meta charset=UTF-8 > <meta name=viewport  content="width=device-width, initial-scale=1"> <link rel=stylesheet  href="/libs/highlight/github.min.css"> <link rel=stylesheet  href="/css/franklin.css"> <link rel=stylesheet  href="/css/basic.css"> <link rel=icon  href="/assets/v.svg"> <title>Advent of Code 2021, day 1</title> <header> <div class=blog-name ><a href="/">viralinstruction</a></div> <nav> <ul> <li><a href="/">Home</a> <li><a href="/about/">About</a> <li><a href="/feed.xml">RSS</a> </ul> <img src="/assets/hamburger.svg" id=menu-icon > </nav> </header> <div class=franklin-content ><h1 id=advent_of_code_2021_day_1 ><a href="#advent_of_code_2021_day_1" class=header-anchor >Advent of Code 2021, day 1</a></h1> <p><em>Written 2021-12-01</em></p> <p>This year&#39;s <a href="https://adventofcode.com/">Advent of Code</a> has begun, meaning that ♪&#39;tis the season to be coding♪. AoC is a <em>great</em> opportunity to learn a new programming language or new set of programming tools. For example, you could use this year&#39;s AoC to learn... oh, I don&#39;t know, <a href="https://julialang.org/">Julia</a>?</p> <p>Great choice&#33; You&#39;ve come to the right place. In this post, I will be showing you how I&#39;ve solved <a href="https://adventofcode.com/2021/day/1">the day 1 puzzle</a> in Julia.</p> <p>The day 1 puzzle is not very challenging. But because this post is <em>really</em> about how best to get started coding a project using Julia, with unit tests and benchmarks and the whole shebang, the solution will be wildly over-engineered.</p> <h2 id=setting_up_your_project ><a href="#setting_up_your_project" class=header-anchor >Setting up your project</a></h2> <p>You&#39;ll want to <a href="https://julialang.org/downloads/#current_stable_release">install Julia first</a> &#40;of course&#41;, and some kind of editor. I recommend <a href="https://code.visualstudio.com/">VS Code</a>, because it currently has the best Julia IDE, but editors can be an, uh, <a href="https://en.wikipedia.org/wiki/Editor_war">touchy subject</a>, so you just pick your favourite. If you choose VS Code you&#39;ll also want to install the <a href="https://www.julia-vscode.org/">julia extension</a> - just get the extension called &quot;julia&quot;.</p> <p>To solve the 24 Advent of Code puzzles, We <em>could</em> just make a series of scripts, but let&#39;s do it the <em>right</em> way and instead create a new Julia project for this year&#39;s AoC. We can then have one source file per day. To do this, launch Julia, then type <code>&#93;</code> to enter <code>Pkg</code> mode, then type:</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;@v1.6&#41; pkg&gt; generate AoC2021
+<!doctype html> <html lang=en > <meta charset=UTF-8 > <meta name=viewport  content="width=device-width, initial-scale=1"> <link rel=stylesheet  href="/libs/highlight/github.min.css"> <link rel=stylesheet  href="/css/franklin.css"> <link rel=stylesheet  href="/css/basic.css"> <link rel=icon  href="/assets/v.svg"> <title>Advent of Code 2021, day 1</title> <header> <div class=blog-name ><a href="/">viralinstruction</a></div> <nav> <ul> <li><a href="/">Home</a> <li><a href="/about/">About</a> <li><a href="/feed.xml">RSS</a> </ul> <img src="/assets/hamburger.svg" id=menu-icon > </nav> </header> <div class=franklin-content ><h1 id=advent_of_code_2021_day_1 ><a href="#advent_of_code_2021_day_1" class=header-anchor >Advent of Code 2021, day 1</a></h1> <p><em>Written 2021-12-01</em></p> <p>This year&#39;s <a href="https://adventofcode.com/">Advent of Code</a> has begun, meaning that ♪&#39;tis the season to be coding♪. AoC is a <em>great</em> opportunity to learn a new programming language or new set of programming tools. For example, you could use this year&#39;s AoC to learn... oh, I don&#39;t know, <a href="https://julialang.org/">Julia</a>?</p> <p>Great choice&#33; You&#39;ve come to the right place. In this post, I will be showing you how I&#39;ve solved <a href="https://adventofcode.com/2021/day/1">the day 1 puzzle</a> in Julia.</p> <p>A fair warning though: The day 1 puzzle is not very challenging. But because this post is <em>really</em> about how best to get started coding a project using Julia, with unit tests and benchmarks and the whole shebang, the solution will be wildly over-engineered. Don&#39;t let the takeaway be that causal programming in Julia requires all this setup.</p> <h2 id=setting_up_your_project ><a href="#setting_up_your_project" class=header-anchor >Setting up your project</a></h2> <p>You&#39;ll want to <a href="https://julialang.org/downloads/#current_stable_release">install Julia first</a> &#40;of course&#41;, and some kind of editor. I recommend <a href="https://code.visualstudio.com/">VS Code</a>, because it currently has the best Julia IDE, but editors can be an, uh, <a href="https://en.wikipedia.org/wiki/Editor_war">touchy subject</a>, so you just pick your favourite. If you choose VS Code you&#39;ll also want to install the <a href="https://www.julia-vscode.org/">julia extension</a> - just get the extension called &quot;julia&quot;.</p> <p>To solve the 24 Advent of Code puzzles, We <em>could</em> just make a series of scripts, but let&#39;s do it the <em>right</em> way and instead create a new Julia project for this year&#39;s AoC. We can then have one source file per day. To do this, launch Julia, then type <code>&#93;</code> to enter <code>Pkg</code> mode, then type:</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;@v1.7&#41; pkg&gt; generate AoC2021
   Generating  project AoC2021:
     AoC2021/Project.toml
-    AoC2021/src/AoC2021.jl</code></pre></div> <p>This is the part where some people grimace in disgust: I&#39;m using <em>the REPL</em> to initialize a project from within Julia? Why not simply do it from the shell?</p> <p>Right, about that... When developing Julia, it is <em>possible</em> to run all your commands from the shell, but I strongly recommend you don&#39;t do that, and work from the REPL instead. For some people, this may be a jarring shift in your normal development workflow, I know. But when in Rome, do as the Romans - Julia&#39;s development experience really does work better when you interact with it from the REPL. If it makes it easier, you can use the Julia REPL in the VSCode terminal.</p> <p>With your open REPL, navigate to the <code>AoC2021</code> directory you just created &#40;type &#39;;&#39; to enter shell mode&#41;, enter package mode and execute <code>activate .</code> &#40;note the trailing dot for &quot;this directory&quot;&#33;&#41; to have the package manager activate the project. If it works, you should see the prompt look like</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt;</code></pre></div>
+    AoC2021/src/AoC2021.jl</code></pre></div> <p>This is the part where some people grimace in disgust: I&#39;m using <em>the REPL</em> to initialize a project from within Julia? Why not simply do it from the shell?</p> <p>Right, about that... When developing Julia, it is <em>possible</em> to run all your commands from the shell, but I strongly recommend you don&#39;t do that, and work from the REPL instead. For some people, this may be a jarring shift in your normal development workflow, I know. But when in Rome, do as the Romans - Julia&#39;s development experience really does work better when you interact with it from the REPL. If it makes it easier, you can use the Julia REPL in the VSCode terminal.</p> <p>With your open REPL, navigate to the <code>AoC2021</code> directory you just created &#40;type <code>;</code> to enter shell mode, navigate to the path and hit backspace to exit to REPL mode&#41;, enter package mode and execute <code>activate .</code> &#40;note the trailing dot for &quot;this directory&quot;&#33;&#41; to have the package manager activate the project. If it works, you should see the prompt look like</p> <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt;</code></pre></div>
 <p>You can then use backspace to get back to the <code>julia&gt;</code> REPL mode. Okay, so currently our directory looks like:</p>
 <div class=shellcode ><pre><code class=language-plaintext >&#36; exa -T
 .
@@ -38,15 +38,84 @@ end
 
 end # module</code></pre></div>
 <p>Such that the function can accept any IO-like argument - this could be a string, or a file-like object. To create more generic code, I could also just have left off the type annotation <code>::IO</code> altogether, but we really do only want to call it on IO inputs, and the type annotation can serve as self-documenting code.</p>
+<p>If you are using VSCode with the <code>julia</code> extension, it will automatically load a bunch of Julia packages related to development &#40;incidentally, this is why the editor is somewhat slow to start&#41;. For example, it loads <a href="https://github.com/timholy/Revise.jl">Revise.jl</a>, a near-obligatory package which tracks changes to your code and reloads any changed code automatically. If you are not using VSCode, I highly highly recommend installing Revise. You don&#39;t want to install Revise into your <em>current</em> project, making it a dependency. Instead, enter your default environment, install it there, and then return to the AoC2021 environment.</p>
+<div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt; activate
+  Activating environment at &#96;~/.julia/environments/v1.7/Project.toml&#96;
+  
+&#40;@v1.7&#41; pkg&gt; add Revise
+ &#91; OUTPUT ELIDED &#93;
+
+&#40;@v1.7&#41; pkg&gt; activate .
+  Activating project at &#96;~/code/AoC2021&#96;
+
+&#40;AoC2021&#41; pkg&gt; 
+@@juliacode</code></pre></div>
+<p>Then, to start developing, open the REPL and type </p>
+<div class=juliacode ><pre><code class=language-plaintext >julia&gt; using AoC2021</code></pre></div>
 <h2 id=the_code_itself ><a href="#the_code_itself" class=header-anchor >The code itself</a></h2>
-<p>So, for day 1, we have an input that looks like this:</p>
-<div class=shellcode ><pre><code class=language-plaintext >1721
-979
-366
-299
-675
-1456</code></pre></div>
-<p>And we need to find the two elements that sum to 2020, and multiply them.</p>
+<p>So, for part 1, I have a list of numbers that looks like this:</p>
+<div class=shellcode ><pre><code class=language-plaintext >199
+200
+208
+210
+200
+207
+240
+269
+260
+263</code></pre></div>
+<p>And I need to count how many numbers are larger than the previous number - in this case 7. Let&#39;s have this list of numbers in the source code for day 1, then we can also use it as a test case:</p>
+<div class=juliacode ><pre><code class=language-plaintext >const TEST_STRING &#61; &quot;&quot;&quot;199
+200
+208
+210
+200
+207
+240
+269
+260
+263&quot;&quot;&quot;</code></pre></div>
+<p>To solve any problem, it&#39;s a good idea to break it down. First, I need to parse it from a text file into a list of numbers. To find suitable functions in Base Julia, you can search the online documentation &#40;which also exists locally in your Julia install&#41;, or you can use the function <code>apropos</code> in the REPL to search through docstrings.</p>
+<p>In this case, I need <code>parse</code> and <code>eachline</code>:</p>
+<div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
+	v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
+end</code></pre></div>
+<p>When I have some approach I think may work, I test it out in the REPL:</p>
+<div class=juliacode ><pre><code class=language-plaintext >julia&gt; AoC2021.day01.solve&#40;IOBuffer&#40;AoC2021.day01.TEST_STRING&#41;&#41;
+10-element Vector&#123;Int64&#125;:
+ 199
+ 200
+ 208
+ 210
+ 200
+ 207
+ 240
+ 269
+ 260
+ 263</code></pre></div>
+<p>That looks right.</p>
+<p>Okay, now to answer the question by comparing consecutive numbers. What immediately springs to mind is the old Python idiom for getting consecutive pairs in a list:</p>
+<div class=pythoncode ><pre><code class=language-plaintext >&gt;&gt;&gt; zip&#40;v, v&#91;1:&#93;&#41;</code></pre></div>
+<p>We can translate that to Julia, and use <code>sum</code> with a generator expression to get the result, just like I would in Python:</p>
+<div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
+	v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
+	sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;
+end</code></pre></div>
+<p>Testing it in the REPL returns <code>7</code>, which is correct. I can now test it for the input:</p>
+<div class=juliacode ><pre><code class=language-plaintext >julia&gt; open&#40;AoC2021.day01.solve, &quot;data/day01.txt&quot;&#41;
+1390</code></pre></div>
+<p>Which happens to be the correct answer for me&#33;</p>
+<h3 id=part_2 ><a href="#part_2" class=header-anchor >Part 2</a></h3>
+<p>As always there is a twist: The puzzle now asks to count the number of sliding windows of size 3 for which the sum is larger than the previous sliding window&#33;</p>
+<p>Instead of messing around with the actual windows, I notice that when the first window &#40;containing the numbers <code>&#40;v&#91;1&#93;, v&#91;2&#93;, v&#91;3&#93;&#41;</code>&#41; slides a slot to the window at indices 2, 3, and 4, the sum decreases by <code>v&#91;1&#93;</code> which is no longer part of the window, and increases by <code>v&#91;4&#93;</code>. So, the sum is larger iff <code>v&#91;4&#93; &gt; v&#91;1&#93;</code>. In other words, part 2 can be viewed just like part 1, except that we consider pairs of numbers with a distance of 4 instead of 1.</p>
+<p>So the code just needs a slight modificiation from part 1:</p>
+<div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
+	v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
+	part1 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;
+	part2 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;4:end&#93;&#41;&#41;
+	&#40;part1, part2&#41;
+end</code></pre></div>
+<p>And it works&#33; :&#41;</p>
 <h2 id=adding_tests ><a href="#adding_tests" class=header-anchor >Adding tests</a></h2>
 <p>Of course, no project is complete without tests. We could use <a href="https://docs.julialang.org/en/v1/stdlib/Test/">Julia&#39;s built-in testing package</a>, but that is quite bare-bones. Instead, let us use <code>ReTest</code>, which allows us to write tests next to the source code the tests work on &#40;and much more&#41;. To add <code>ReTest</code> as a dependency, simply use the package manager:</p>
 <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt; add ReTest@0.3</code></pre></div>
@@ -64,41 +133,25 @@ end # module</code></pre></div>
 using ..ReTest
 
 &#91; rest of file elided &#93;</code></pre></div>
-<p>We now add some tests near the bottom of the <code>day01.jl</code> file. AoC helpfully provides us with a small test example in the project description. Let&#39;s make that a constant in the code:</p>
-<div class=juliacode ><pre><code class=language-plaintext >const TEST_STRING &#61; &quot;&quot;&quot;1721
-979
-366
-299
-675
-1456&quot;&quot;&quot;</code></pre></div>
 <p>We can now write a test set using the <code>@testset</code> macro, that makes sure our code works for the test data at least:</p>
-<div class=juliacode ><pre><code class=language-plaintext >@testset &quot;sum_elements&quot; begin
-	@test sum_elements&#40;&#91;1, 2, 4&#93;, 5&#41; &#61;&#61; &#40;1, 4&#41;
-	@test sum_elements&#40;&#91;0x02, 0x04, 0x07&#93;, 0x0b&#41; &#61;&#61;&#61; &#40;0x04, 0x07&#41;
-	@test sum_elements&#40;&#91;1&#93;, 1&#41; &#61;&#61;&#61; nothing
-	@test sum_elements&#40;&#91;6, 4, 1&#93;, 8&#41; &#61;&#61;&#61; nothing
-	@test sum_elements&#40;Int&#91;&#93;, 0&#41; &#61;&#61;&#61; nothing
-
-	numbers &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;IOBuffer&#40;TEST_STRING&#41;&#41;&#93;
-	@test sum_elements&#40;numbers, 2020&#41; &#61;&#61; &#40;1721, 299&#41;
+<div class=juliacode ><pre><code class=language-plaintext >@testset &quot;day01&quot; begin
+	@test solve&#40;IOBuffer&#40;TEST_STRING&#41;&#41; &#61;&#61; &#40;7, 5&#41;
 end</code></pre></div>
 <p>To test it, we import our module <code>AoC2021</code>, and run <code>AoC2021.runtests&#40;&#41;</code>:</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; using AoC2021
-
-julia&gt; AoC2021.runtests&#40;&#41;
-                       Pass  
-Main.AoC2021.day01:
-  sum_elements     |      6</code></pre></div>
+<div class=juliacode ><pre><code class=language-plaintext >julia&gt; AoC2021.runtests&#40;&#41;
+                   Pass  
+AoC2021.day01:
+  day01        |      1</code></pre></div>
 <h2 id=adding_static_analysis ><a href="#adding_static_analysis" class=header-anchor >Adding static analysis</a></h2>
-<p>After having tested, we can be fairly sure it works as we expect. However, writing a comprehensive test suite that covers all the edge cases is difficult. To be a little more confident our program is well-behaved, we can analyze the behaviour statically. Of course for projects as tiny as one Advent of Code day, there really isn&#39;t much point to static analysis, but let me show you anyway:</p>
-<p>For this, I use the package <code>JET.jl</code>. We don&#39;t need it as part of the <code>AoC2021</code> project, so I install the package to the default environment instead:</p>
+<p>After having tested, we can be fairly sure it works as we expect. However, writing a comprehensive test suite that covers all the edge cases is difficult. To be a little more confident our program is well-behaved, we can analyze the behaviour statically. Of course for projects as tiny as Advent of Code day 1, there really isn&#39;t much point to static analysis, but let me show you anyway:</p>
+<p>For this, I use the package <code>JET.jl</code>. Just like Revise, let&#39;s not install this into the AoC2021 project, but in the default environment:</p>
 <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt; activate
-  Activating environment at &#96;~/.julia/environments/v1.6/Project.toml&#96;
+  Activating environment at &#96;~/.julia/environments/v1.7/Project.toml&#96;
 
-&#40;@v1.6&#41; pkg&gt; add JET
+&#40;@v1.7&#41; pkg&gt; add JET
   &#91; output elided &#93;
 
-&#40;@v1.6&#41; pkg&gt; activate .
+&#40;@v1.7&#41; pkg&gt; activate .
   Activating environment at &#96;~/code/AoC2021/Project.toml&#96;</code></pre></div>
 <p>An interesting wrinkle when doing static analysis of Julia is that the program&#39;s behaviour is essentially un-analyzable until it is actually compiled, and it is not compiled until we run it - or at least give concrete input types to its functions. Therefore, unlike for static languages, it is mostly meaningless to try to analyze the <em>source code</em> of our file - instead, we have to analyze specific <em>uses</em> of the code.</p>
 <p>Here, for example, I analyze on the type-level how the main function behaves when called with an <code>IOBuffer</code>:</p>
@@ -108,43 +161,56 @@ julia&gt; @report_call AoC2021.day01.solve&#40;IOBuffer&#40;&#41;&#41;
 No errors &#33;
 Union&#123;Nothing, Int64&#125;</code></pre></div>
 <p>No errors&#33; Whew&#33;</p>
+<p>If you&#39;re using VSCode, <code>JET.jl</code> integrates with the editor and displays any errors in the <code>problems</code> pane &#40;or in this case, does nothing as there are no errors.&#41;</p>
 <p>It would be possible to add <code>JET.jl</code> static analysis to the test suite. However, with the current state of static analysis in Julia, this is not advisable. Unlike static languages, the presence of a <em>potential</em> error - for example an unresolvable function call - may not be an actual problem in Julia code. For example, suppose we had a few dependencies, and the dependencies got updated. It would be completely fair game for these dependencies to now include code that is not statically inferrable, but which behaves correctly when running. It is therefore best to not include static analysis in automatic tests. Static analysis may be improved in future versions of Julia, but for now, we&#39;ll leave it as it is.</p>
 <h2 id=benchmarking ><a href="#benchmarking" class=header-anchor >Benchmarking</a></h2>
 <p>Wise programmers say that, most of the time, slow code is fast enough, and developers should optimize their code for maintainability instead of speed. That may be true, but that has never stopped me from over engineering otherwise uncomplicated software until it goes <em>brrrrrr</em>.</p>
 <p>For benchmarking, we&#39;ll use the tested and tried <code>BenchmarkTools</code> package. Again, this shouldn&#39;t be a dependency of our actual project, so let&#39;s install it in our home environment:</p>
 <div class=juliacode ><pre><code class=language-plaintext >&#40;AoC2021&#41; pkg&gt; activate
-  Activating environment at &#96;~/.julia/environments/v1.6/Project.toml&#96;
+  Activating environment at &#96;~/.julia/environments/v1.7/Project.toml&#96;
 
-&#40;@v1.6&#41; pkg&gt; add BenchmarkTools
+&#40;@v1.7&#41; pkg&gt; add BenchmarkTools
   &#91; output elided &#93;
 
-&#40;@v1.6&#41; pkg&gt; activate .
+&#40;@v1.7&#41; pkg&gt; activate .
   Activating environment at &#96;~/code/AoC2021/Project.toml&#96;</code></pre></div>
 <p>Now we can benchmark a function call like so:</p>
 <div class=juliacode ><pre><code class=language-plaintext >julia&gt; @benchmark open&#40;AoC2021.day01.solve, &quot;data/day01.txt&quot;&#41;
-BenchmarkTools.Trial: 1609 samples with 1 evaluation.
- Range &#40;min … max&#41;:  2.843 ms …   6.682 ms  ┊ GC &#40;min … max&#41;: 0.00&#37; … 0.00&#37;
- Time  &#40;median&#41;:     2.880 ms               ┊ GC &#40;median&#41;:    0.00&#37;
- Time  &#40;mean ± σ&#41;:   3.101 ms ± 525.799 μs  ┊ GC &#40;mean ± σ&#41;:  0.00&#37; ± 0.00&#37;
+BenchmarkTools.Trial: 7881 samples with 1 evaluation.
+ Range &#40;min … max&#41;:  491.057 μs …   8.061 ms  ┊ GC &#40;min … max&#41;: 0.00&#37; … 90.80&#37;
+ Time  &#40;median&#41;:     552.303 μs               ┊ GC &#40;median&#41;:    0.00&#37;
+ Time  &#40;mean ± σ&#41;:   630.954 μs ± 378.357 μs  ┊ GC &#40;mean ± σ&#41;:  3.41&#37; ±  5.54&#37;
 
-  ██                                                        ▃
-  ████▇█▇▇▇▇▇▇▆▇▆▆▇▆▇▆▆▆▅▇▅▆▆▆▄▅▆▆▄▆▅▆▅▅▆▄▆▄▆▅▅▅▅▄▅▅▅▅▄▅▄▆▁▆█ █
-  2.84 ms      Histogram: log&#40;frequency&#41; by time      4.79 ms &lt;
+  ▁▅▆██▄▄▄▃▃▄▅▅▃▂▂▁▁  ▁                                         ▂
+  ██████████████████████▇██▇▇▇▇▇▇▆▇▇▇▇▆▇▅▅▆▆▆▅▅▆▆▆▆▆▆▆▅▅▅▅▆▆▅▄▅ █
+  491 μs        Histogram: log&#40;frequency&#41; by time       1.33 ms &lt;
 
- Memory estimate: 16.16 KiB, allocs estimate: 420.</code></pre></div>
-<p>&#40;or get just the minimum time using <code>@btime</code>&#41;. Those times include reading and parsing the input file. Not too unreasonable&#33;</p>
+ Memory estimate: 179.92 KiB, allocs estimate: 4021.</code></pre></div>
+<p>&#40;or get just the minimum time using <code>@btime</code>, where the output is less unwieldy&#41;. Those times include reading and parsing the input file. Not too unreasonable&#33;</p>
+<p>Let&#39;s see where we can improve. The first thing that strikes me is that we allocate new vectors when we index into them using ranges. Let&#39;s change that to views.</p>
+<p>Second, the <code>parse</code> function tries to autodetect the base, such that parsing of e.g. base 16 text works automatically. That&#39;s nice, but the check is a little slow, so let&#39;s specify the base is 10.</p>
+<div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
+	v &#61; &#91;parse&#40;Int, line, base&#61;10&#41; for line in eachline&#40;io&#41;&#93;
+	part1 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, view&#40;v, 2:lastindex&#40;v&#41;&#41;&#41;&#41;
+	part2 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, view&#40;v, 4:lastindex&#40;v&#41;&#41;&#41;&#41;
+	&#40;part1, part2&#41;
+end</code></pre></div>
+<p>And then</p>
+<div class=juliacode ><pre><code class=language-plaintext >julia&gt; @btime open&#40;AoC2021.day01.solve, &quot;data/day01.txt&quot;&#41;;
+  490.109 μs &#40;4021 allocations: 179.92 KiB&#41;</code></pre></div>
+<p>That&#39;s, uh... basically no difference. A bit more benchmarking confirms that the gain is insignificant compared to the total runtime. Unfortunately, IO is the bane of Julia&#39;s speed, since IO operations are much less optimized than other types of operations in Julia. For example, every line in the <code>eachline</code> iterator needlessly allocates a string instead of mutating the same string or returning a string-line view into a vector. And there is little to no good abstractions for tweaking file buffering in Julia.</p>
+<p>When I factor out the parsing and benchmark only the computational part, I see that the &quot;optimization&quot; changed the mean run time from 10.9 µs to 4.4 µs. Compared to the 100&#39;s of µs, this change is not worth it, so I revert.</p>
 <h2 id=the_easy_way ><a href="#the_easy_way" class=header-anchor >The easy way</a></h2>
 <p>Setting up the whole environment and tests and such was a lot of work. Does it really have to be that complicated to code in Julia?</p>
 <p>No&#33; A more typical Julia solution for day one could simply be a script with:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function main&#40;path&#41;
     v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;path&#41;&#93;
-    for n in &#40;2, 3&#41;, i in Iterators.product&#40;v, n&#41;
-        sum&#40;i&#41; &#61;&#61; 2020 &amp;&amp; println&#40;prod&#40;i&#41;&#41;
-    end
-    Iterators.product&#40;v, 3&#41; |&gt; filter
+	println&#40;sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;&#41;
+	println&#40;sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;4:end&#93;&#41;&#41;&#41;
 end
 
 main&#40;ARGS&#91;1&#93;&#41;</code></pre></div>
+<p>Which runs in less than 1 second including startup time.</p>
 <div class=page-foot >
   <div class=copyright >
     Jakob Nybo Nissen. Last modified: December 01, 2021. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.

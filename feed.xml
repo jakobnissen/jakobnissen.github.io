@@ -46,6 +46,25 @@
 
 <item>
   <title>
+    <![CDATA[  Advent of Code 2021, day 1  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/aoc2021_1/index.html </link>
+  <guid> https://viralinstruction.com/posts/aoc2021_1/index.html </guid>
+  <description>
+    <![CDATA[  Curious about Julia? Why not use Advent of Code 2021 to learn it&#33;  ]]>
+  </description>  
+    
+  <pubDate>Wed, 01 Dec 2021 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  Union vs sum types  ]]>
   </title>
   <link> https://viralinstruction.com/posts/uniontypes/index.html </link>
