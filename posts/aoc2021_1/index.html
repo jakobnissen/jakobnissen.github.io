@@ -33,7 +33,7 @@ end # module</code></pre></div>
 <div class=juliacode ><pre><code class=language-plaintext >module day01
 
 function solve&#40;io::IO&#41;
-	# code goes here...
+    # code goes here...
 end
 
 end # module</code></pre></div>
@@ -77,7 +77,7 @@ end # module</code></pre></div>
 <p>To solve any problem, it&#39;s a good idea to break it down. First, I need to parse it from a text file into a list of numbers. To find suitable functions in Base Julia, you can search the online documentation &#40;which also exists locally in your Julia install&#41;, or you can use the function <code>apropos</code> in the REPL to search through docstrings.</p>
 <p>In this case, I need <code>parse</code> and <code>eachline</code>:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
-	v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
+    v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
 end</code></pre></div>
 <p>When I have some approach I think may work, I test it out in the REPL:</p>
 <div class=juliacode ><pre><code class=language-plaintext >julia&gt; AoC2021.day01.solve&#40;IOBuffer&#40;AoC2021.day01.TEST_STRING&#41;&#41;
@@ -97,8 +97,8 @@ end</code></pre></div>
 <div class=pythoncode ><pre><code class=language-plaintext >&gt;&gt;&gt; zip&#40;v, v&#91;1:&#93;&#41;</code></pre></div>
 <p>We can translate that to Julia, and use <code>sum</code> with a generator expression to get the result, just like I would in Python:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
-	v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
-	sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;
+    v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
+    sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;
 end</code></pre></div>
 <p>Testing it in the REPL returns <code>7</code>, which is correct. I can now test it for the input:</p>
 <div class=juliacode ><pre><code class=language-plaintext >julia&gt; open&#40;AoC2021.day01.solve, &quot;data/day01.txt&quot;&#41;
@@ -109,10 +109,10 @@ end</code></pre></div>
 <p>Instead of messing around with the actual windows, I notice that when the first window &#40;containing the numbers <code>&#40;v&#91;1&#93;, v&#91;2&#93;, v&#91;3&#93;&#41;</code>&#41; slides a slot to the window at indices 2, 3, and 4, the sum decreases by <code>v&#91;1&#93;</code> which is no longer part of the window, and increases by <code>v&#91;4&#93;</code>. So, the sum is larger iff <code>v&#91;4&#93; &gt; v&#91;1&#93;</code>. In other words, part 2 can be viewed just like part 1, except that we consider pairs of numbers with a distance of 4 instead of 1.</p>
 <p>So the code just needs a slight modificiation from part 1:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
-	v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
-	part1 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;
-	part2 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;4:end&#93;&#41;&#41;
-	&#40;part1, part2&#41;
+    v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;io&#41;&#93;
+    part1 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;
+    part2 &#61; sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;4:end&#93;&#41;&#41;
+    &#40;part1, part2&#41;
 end</code></pre></div>
 <p>And it works&#33; :&#41;</p>
 <h2 id=adding_tests ><a href="#adding_tests" class=header-anchor >Adding tests</a></h2>
@@ -177,7 +177,7 @@ using ..InlineTest
 &#91; rest of file elided &#93;</code></pre></div>
 <p>We can now write a test set using the <code>@testset</code> macro, that makes sure our code works for the test data at least:</p>
 <div class=juliacode ><pre><code class=language-plaintext >@testset &quot;day01&quot; begin
-	@test solve&#40;IOBuffer&#40;TEST_STRING&#41;&#41; &#61;&#61; &#40;7, 5&#41;
+    @test solve&#40;IOBuffer&#40;TEST_STRING&#41;&#41; &#61;&#61; &#40;7, 5&#41;
 end</code></pre></div>
 <p>To test it, must have imported our module <code>AoC2021</code>. We also need to import <code>ReTest</code> &#40;install it in the default environment like you did <code>Revise.jl</code>, not in the current environment&#33;&#41; and run <code>AoC2021.runtests&#40;&#41;</code>:</p>
 <div class=juliacode ><pre><code class=language-plaintext >julia&gt; using ReTest
@@ -228,9 +228,9 @@ BenchmarkTools.Trial: 10000 samples with 1 evaluation.
 <p>Another issue is fold-based iterators like <code>sum</code>. Their behaviour is undefined for empty collections &#40;what&#39;s the sum of nothing?&#41;, so they throw an error in Julia. The potential to throw is both an edge case I ought to cover, and slows the code down a little. This can be prevented by setting the <code>init</code> keyword, giving it an initial value to start from.</p>
 <p>Lastly, for some bizzare reason, iterating a view is inefficient in Julia compared to indexing. That really really ought to be fixed, but for now, let&#39;s change the <code>zip</code> iterator to a solution that uses indexing:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
-	zipdiff&#40;a, b&#41; &#61; sum&#40;&#40;@inbounds b&#91;i&#93; &gt; a&#91;i&#93; for i in eachindex&#40;b&#41;&#41;, init&#61;0&#41;
-	v &#61; &#91;parse&#40;Int, line, base&#61;10&#41; for line in eachline&#40;io&#41;&#93;
-	return &#40;zipdiff&#40;v, @view v&#91;2:end&#93;&#41;, zipdiff&#40;v, @view v&#91;4:end&#93;&#41;&#41;
+    zipdiff&#40;a, b&#41; &#61; sum&#40;&#40;@inbounds b&#91;i&#93; &gt; a&#91;i&#93; for i in eachindex&#40;b&#41;&#41;, init&#61;0&#41;
+    v &#61; &#91;parse&#40;Int, line, base&#61;10&#41; for line in eachline&#40;io&#41;&#93;
+    return &#40;zipdiff&#40;v, @view v&#91;2:end&#93;&#41;, zipdiff&#40;v, @view v&#91;4:end&#93;&#41;&#41;
 end</code></pre></div>
 <p>And then</p>
 <div class=juliacode ><pre><code class=language-plaintext >julia&gt; @btime open&#40;AoC2021.day01.solve, &quot;data/day01.txt&quot;&#41;;
@@ -241,8 +241,8 @@ end</code></pre></div>
 solve&#40;io::IO&#41; &#61; solve&#40;parse&#40;io&#41;&#41;
 
 function solve&#40;v::AbstractVector&#123;&lt;:Integer&#125;&#41;
-	zipdiff&#40;a, b&#41; &#61; sum&#40;&#40;@inbounds b&#91;i&#93; &gt; a&#91;i&#93; for i in eachindex&#40;b&#41;&#41;, init&#61;0&#41;
-	return &#40;zipdiff&#40;v, @view v&#91;2:end&#93;&#41;, zipdiff&#40;v, @view v&#91;4:end&#93;&#41;&#41;
+    zipdiff&#40;a, b&#41; &#61; sum&#40;&#40;@inbounds b&#91;i&#93; &gt; a&#91;i&#93; for i in eachindex&#40;b&#41;&#41;, init&#61;0&#41;
+    return &#40;zipdiff&#40;v, @view v&#91;2:end&#93;&#41;, zipdiff&#40;v, @view v&#91;4:end&#93;&#41;&#41;
 end</code></pre></div>
 <p>Benchmarking only the <code>solve&#40;::AbstractVector&#41;</code> method by itself reveals that the optimization changed the minimum run time from 4.68 μs to 409 ns. A great improvement on the numerical part, but insignificant compared to the parse cost. In any case, I leave in the optimizations.</p>
 <h2 id=the_easy_way ><a href="#the_easy_way" class=header-anchor >The easy way</a></h2>
@@ -250,8 +250,8 @@ end</code></pre></div>
 <p>No&#33; A more typical Julia solution for day one could simply be a script with:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function main&#40;path&#41;
     v &#61; &#91;parse&#40;Int, line&#41; for line in eachline&#40;path&#41;&#93;
-	println&#40;sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;&#41;
-	println&#40;sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;4:end&#93;&#41;&#41;&#41;
+    println&#40;sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;2:end&#93;&#41;&#41;&#41;
+    println&#40;sum&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, v&#91;4:end&#93;&#41;&#41;&#41;
 end
 
 main&#40;ARGS&#91;1&#93;&#41;</code></pre></div>
