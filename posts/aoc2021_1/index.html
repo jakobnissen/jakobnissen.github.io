@@ -224,28 +224,27 @@ BenchmarkTools.Trial: 10000 samples with 1 evaluation.
  Memory estimate: 179.92 KiB, allocs estimate: 4021.</code></pre></div>
 <p>&#40;or get just the minimum time using <code>@btime</code>, where the output is less unwieldy&#41;. Those times include reading and parsing the input file. Not too unreasonable&#33;</p>
 <p>Let&#39;s see where we can improve. The first thing that strikes me is that we allocate new vectors when we index into them using ranges. Let&#39;s change that to views.</p>
-<p>Second, the <code>parse</code> function tries to autodetect the base, such that parsing of e.g. base 16 text works automatically. That&#39;s nice, but the check is a little slow, so let&#39;s specify the base is 10.</p>
-<p>Another issue is fold-based iterators like <code>sum</code>. Their behaviour is undefined for empty collections &#40;what&#39;s the sum of nothing?&#41;, so they throw an error in Julia. This can be prevented by setting the <code>init</code> keyword, giving it an initial value to start from:</p>
+<p>Second, the <code>parse</code> function tries to autodetect the base, such that parsing of e.g. base 16 text works automatically. That&#39;s nice, but the check is a little slow, so let&#39;s specify the base is 10. This is also more correct, so that&#39;s nice.</p>
+<p>Another issue is fold-based iterators like <code>sum</code>. Their behaviour is undefined for empty collections &#40;what&#39;s the sum of nothing?&#41;, so they throw an error in Julia. The potential to throw is both an edge case I ought to cover, and slows the code down a little. This can be prevented by setting the <code>init</code> keyword, giving it an initial value to start from.</p>
+<p>Lastly, for some bizzare reason, iterating a view is inefficient in Julia compared to indexing. That really really ought to be fixed, but for now, let&#39;s change the <code>zip</code> iterator to a solution that uses indexing:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
+	zipdiff&#40;a, b&#41; &#61; sum&#40;&#40;@inbounds b&#91;i&#93; &gt; a&#91;i&#93; for i in eachindex&#40;b&#41;&#41;, init&#61;0&#41;
 	v &#61; &#91;parse&#40;Int, line, base&#61;10&#41; for line in eachline&#40;io&#41;&#93;
-    part1 &#61; sum&#40;&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, @view v&#91;2:end&#93;&#41;&#41;, init&#61;0&#41;
-    part2 &#61; sum&#40;&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, @view v&#91;4:end&#93;&#41;&#41;, init&#61;0&#41;
-	&#40;part1, part2&#41;
+	return &#40;zipdiff&#40;v, @view v&#91;2:end&#93;&#41;, zipdiff&#40;v, @view v&#91;4:end&#93;&#41;&#41;
 end</code></pre></div>
 <p>And then</p>
 <div class=juliacode ><pre><code class=language-plaintext >julia&gt; @btime open&#40;AoC2021.day01.solve, &quot;data/day01.txt&quot;&#41;;
-  251.896 μs &#40;4021 allocations: 179.92 KiB&#41;</code></pre></div>
+  249.112 μs &#40;4021 allocations: 179.92 KiB&#41;</code></pre></div>
 <p>That&#39;s, uh... basically no difference. A bit more benchmarking confirms that the gain is insignificant compared to the total runtime. Unfortunately, IO is the bane of Julia&#39;s speed, since IO operations are much less optimized than other types of operations in Julia. For example, every line in the <code>eachline</code> iterator needlessly allocates a string instead of mutating the same string or returning an <code>AbstractString</code> view into a buffer. And there is little to no good abstractions for tweaking file buffering in Julia.</p>
 <p>I factor out the parsing from the core algorithm to more accurately asses the optimizations:</p>
 <div class=juliacode ><pre><code class=language-plaintext >parse&#40;io::IO&#41; &#61; &#91;Base.parse&#40;Int, line, base&#61;10&#41; for line in eachline&#40;io&#41;&#93;
 solve&#40;io::IO&#41; &#61; solve&#40;parse&#40;io&#41;&#41;
 
 function solve&#40;v::AbstractVector&#123;&lt;:Integer&#125;&#41;
-    part1 &#61; sum&#40;&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, @view v&#91;2:end&#93;&#41;&#41;, init&#61;0&#41;
-    part2 &#61; sum&#40;&#40;next &gt; prev for &#40;prev, next&#41; in zip&#40;v, @view v&#91;4:end&#93;&#41;&#41;, init&#61;0&#41;
-    &#40;part1, part2&#41;
+	zipdiff&#40;a, b&#41; &#61; sum&#40;&#40;@inbounds b&#91;i&#93; &gt; a&#91;i&#93; for i in eachindex&#40;b&#41;&#41;, init&#61;0&#41;
+	return &#40;zipdiff&#40;v, @view v&#91;2:end&#93;&#41;, zipdiff&#40;v, @view v&#91;4:end&#93;&#41;&#41;
 end</code></pre></div>
-<p>Benchmarking only the <code>solve&#40;::AbstractVector&#41;</code> method by itself reveals that the optimization changed the minimum run time from 4.68 μs to 3.15 μs. A decent improvement on the numerical part, but insignificant compared to the parse cost. In any case, I leave in the optimizations.</p>
+<p>Benchmarking only the <code>solve&#40;::AbstractVector&#41;</code> method by itself reveals that the optimization changed the minimum run time from 4.68 μs to 409 ns. A great improvement on the numerical part, but insignificant compared to the parse cost. In any case, I leave in the optimizations.</p>
 <h2 id=the_easy_way ><a href="#the_easy_way" class=header-anchor >The easy way</a></h2>
 <p>Setting up the whole environment and tests and such was a lot of work. Does it really have to be that complicated to code in Julia?</p>
 <p>No&#33; A more typical Julia solution for day one could simply be a script with:</p>
@@ -259,7 +258,7 @@ main&#40;ARGS&#91;1&#93;&#41;</code></pre></div>
 <p>Which runs in less than 1 second including startup time.</p>
 <div class=page-foot >
   <div class=copyright >
-    Jakob Nybo Nissen. Last modified: December 01, 2021. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
+    Jakob Nybo Nissen. Last modified: December 02, 2021. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
   </div>
 </div>
 </div>
