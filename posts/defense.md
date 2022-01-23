@@ -6,7 +6,9 @@ _Written 2022-01-23_
 
 In the winter of 2014/15, I was a university student, who characteristically had too much free time on my hands, and not enough money to keep myself busy in that free time.
 Bored and broke, programming was a perfect hobby to pick up. It's free if you already own a computer, and the time investment is not a discouragement when you're fighting boredom.
-I chose to learn Python on a recommendation, and I can heartedly forward that recommendation to a beginner: The learning curve is gentle, and the language is mostly pleasant and without too many distractions when you just need to wrap your head around how a for loop works. I advanced quickly enough.
+I chose to learn Python on a recommendation, and I can heartedly forward that recommendation to a beginner:
+The learning curve is gentle, and the language is mostly pleasant and without too many distractions when you just need to wrap your head around how a for loop works.
+I advanced quickly enough.
 
 There was, however, one concept I struggled deeply with understanding: Classes.
 Not the dark magic in the depths of class implementation grimoire, but simply the concept of classes as it appears on its surface.
@@ -69,7 +71,7 @@ In every way then, the second code snippet is better code. And so I assumed I ju
 I assumed that, if Python classes had a raison d'être, they _had_ to have some special behaviour I just couldn't see!
 
 Viewing from the present, it's clear I got the assumption wrong.
-Sure, classes do unlock some new behavour that cannot be achieved without the use of classes, but that is not why classes are useful.
+Sure, classes do unlock some new behaviour that cannot be achieved without the use of classes, but that is not why classes are useful.
 In fact, nearly all the classes I write nowadays don't do anything that could not be achieved with built-in types and function calls.
 
 The problem with the example of Rex the Dog is that classes _are not about_ being able to represent your dog.
@@ -82,7 +84,7 @@ Producing it consumes no raw materials. It requires no specialized tools to manu
 The product has no weight, and its physical distribution is almost effortless.
 There is almost no cost to producing millions of copies and shipping them all around the world.
 
-So, without these contrains, is software unbounded, infinite?
+So, without these constrains, is software unbounded, infinite?
 No, it is held back by other constrains. Sometimes software is constrained by the physical capability of the machines it runs on, disk space, memory usage or speed of computation.
 I don't want to discount these physical constrains: After all, much of what I've written on this blog is about performance.
 But mostly, software is bounded by its creation process: Programmers have limited time to create, and especially limited time to maintain, code.
@@ -99,12 +101,13 @@ I had never seen a locked door and so I didn't understand why anyone would want 
 
 I've since had the fortune to teach Python to other beginners.
 In those courses, I've prioritised tasking the students with a large personal project at the end of the course, even when it means having to make cuts elsewhere in the curriculum.
-This provides a unique oppertunity when supervising the students to show, not tell, how good coding practises can help untangle their spaghetti code and retake control of their project that is sinking.
+This provides a unique opportunity when supervising the students to show, not tell, how good coding practices can help untangle their spaghetti code and retake control of their project that is sinking.
 
 ## A Python with no classes
 What then, would happen if we were to ban classes from Python?
 
-Oh, it would make the language so much _simpler_! As in my example of Rex - what's left would be pure _domain logic_, business logic, the real deal! Almost no code wasted on boilerplate or ceremony!
+Oh, it would make the language so much _simpler_! As in my example of Rex - what's left would be pure _domain logic_, business logic, the real deal!
+Almost no code wasted on boilerplate or ceremony!
 There would be less weird syntax to teach, not this roadblock for newbies like myself to get stuck on when learning.
 Best of all, there would barely be any loss of functionality, since classes mostly don't get you any new behaviour!
 
@@ -123,9 +126,11 @@ And so they would have accidentally re-introduced classes, only this time the ex
 
 These kinds of structures emerges spontaneously and constantly, _all over_ code.
 
-Programming languages used to not support functions, but then it was discovered that instructions tended to be grouped in blocks by their functionality, and that conceptualizing it as a function made the code easier to reason about. The introduction of functions did not make programming more complex, on the contrary, it became simpler in the way that matters.
+Programming languages used to not support functions, but then it was discovered that instructions tended to be grouped in blocks by their functionality, and that conceptualizing it as a function made the code easier to reason about.
+The introduction of functions did not make programming more complex, on the contrary, it became simpler in the way that matters.
 
-Languages used to not have structs, but then programmers discovered the usefulness of grouping sets of data into an abstract, higher-order kind of data called a struct. And again, this feature did not make programs more complex, but made them simpler.
+Languages used to not have structs, but then programmers discovered the usefulness of grouping sets of data into an abstract, higher-order kind of data called a struct.
+And again, this feature did not make programs more complex, but made them simpler.
 
 Compared to the languages of those times, modern programming languages are crammed to the brim with features.
 I happen to personally like Rust and Julia, both languages that are (in)famously complicated and featureful.
@@ -134,7 +139,7 @@ Julia has a complicated type system. Types like `AbstractSet{Union{Nothing, <:In
 But the structure of this type, and thus its complexity, is merely an instantiation of the programmer's intent about the data it represents.
 With a simpler type system, that type would not exist, but the same intent would be there, nonetheless.
 
-Python used to not have a type system rich enough to express a concept like that, and so programmers, when reading Python, had to work out for themselves that a particular variable _implicitly_ conformed to the constrains of that type - if the reader was lucky, this information could be read from code comments, but most often this knowledge could only be gained by keeping inside your head all the implicit assumptions the sorrounding code made about the variable.
+Python used to not have a type system rich enough to express a concept like that, and so programmers, when reading Python, had to work out for themselves that a particular variable _implicitly_ conformed to the constrains of that type - if the reader was lucky, this information could be read from code comments, but most often this knowledge could only be gained by keeping inside your head all the implicit assumptions the surrounding code made about the variable.
 
 And it fucking sucked.
 
@@ -154,7 +159,8 @@ Julia the language has no concept of ownership, and yet the docstring for `FASTA
 │  construction of the record.
 ```
 
-See? Julia _does_ have a concept of "ownership", just not, you know, in the actual language. But a programmer using `FASTA.Record` must keep track of who owns its data, and this mental bookkeeping makes `FASTA.Record` harder to use by making code about it harder to follow.
+See? Julia _does_ have a concept of "ownership", just not, you know, in the actual language.
+But a programmer using `FASTA.Record` must keep track of who owns its data, and this mental bookkeeping makes `FASTA.Record` harder to use by making code about it harder to follow.
 The complexity of Rust's ownership model is not _added_ to an otherwise simple program, it is merely the compiler being extremely pedantic about your code obeying rules it had to obey anyway.
 
 ## "A simple language"
@@ -162,7 +168,7 @@ That's what it says in big bold letters near the top of the Zig language web pag
 Zig is a recent experiment in cutting away all this derided complexity which plagues modern programming languages.
 Closures, function traits, operator overloading - programming is hard enough to begin with, why can't we at least program in a _simple_ language, without all that crap?
 
-Zig honestly seems like a cool language, and I'd like to learn it one day, but I can't say its simplicity is its most attrative quality.
+Zig honestly seems like a cool language, and I'd like to learn it one day, but I can't say its simplicity is its most attractive quality.
 Below the header, the website reads:
 
 > Focus on debugging your application rather than debugging your programming language knowledge.
@@ -174,7 +180,9 @@ Meaning of course that sure, compared to writing Rust code, it's probably simple
 
 To me this is a trick of words: The difficulty in figuring out how to satisfy e.g. ownership rules in Zig is, by mere convention, debugging the "application", whereas the same difficulty in Rust would be debugging the "programming language".
 
-Zig, of course, is not the first language to explicitly seek simplicity. Go did it before Zig, with much of the same motivation: Get the language out of the way. And in some way, they were successful. Go is heralded as an easy language to learn. But on the other hand... well, let me end on the the words of [someone else:](https://fasterthanli.me/articles/i-want-off-mr-golangs-wild-ride)
+Zig, of course, is not the first language to explicitly seek simplicity. Go did it before Zig, with much of the same motivation: Get the language out of the way.
+And in some way, they were successful. Go is heralded as an easy language to learn.
+But on the other hand... well, let me end on the the words of [someone else:](https://fasterthanli.me/articles/i-want-off-mr-golangs-wild-ride)
 
 > Over and over, every piece of documentation for the Go language markets it as "simple".
 > This is a lie.
@@ -188,20 +196,29 @@ All the language features in the examples above - classes, advanced types, and t
 They all feel like they _emerge spontaneously from existing code_ independently of whether the language designer has thought about them.
 In that sense, they are the best kind of feature; instead of adding new things to worry about, they merely provide a vocabulary and tooling for dealing with already existing problems.
 
-Not all language features are like this. For example, Julia has four different ways of defining a function, and just as many variations on how a for loop looks. One can define a type to be a `struct`, `mutable struct`, `abstract type` and `primitive type` (all the former possibly parametric). Types can be placed in the type hierarchy as either concrete types, abstract types, union types or unionall types. The _representation_ of types (i.e. type of types) can be either `DataType`, `Union`, `UnionAll`, or `Bottom`.
+Not all language features are like this.
+For example, Julia has four different ways of defining a function, and just as many variations on how a for loop looks.
+One can define a type to be a `struct`, `mutable struct`, `abstract type` and `primitive type` (all the former possibly parametric).
+Types can be placed in the type hierarchy as either concrete types, abstract types, union types or unionall types.
+The _representation_ of types (i.e. type of types) can be either `DataType`, `Union`, `UnionAll`, or `Bottom`.
 
-This complexity is not completely _redundant_ as such, but it sure is a mouthful to learn, and it's ot clear to me this design is the cleanest. Surely, it feels like, [this did not need to be so complicated](https://github.com/JuliaLang/julia/issues/29368).
+This complexity is not completely _redundant_ as such, but it sure is a mouthful to learn, and it's to clear to me this design is the cleanest. Surely, it feels like, [this did not need to be so complicated](https://github.com/JuliaLang/julia/issues/29368).
 
-The worst kind of features are duplicated APIs, usually because an old, poorly designed API sticks around only to satisfy backwards compatibility and perhaps a small group of users refusing to stop using it. I don't have any love for this sort of complexity in a language, and people are right to eschew it.
+The worst kind of features are duplicated APIs, usually because an old, poorly designed API sticks around only to satisfy backwards compatibility and perhaps a small group of users refusing to stop using it.
+I don't have any love for this sort of complexity in a language, and people are right to eschew it.
 
 On an even more fundamental level, however, the detractors are right that even justified complexity in a language does impose a cost on users.
 I like Rust, but I can't write it for more than two hours without beginning to wish I wrote Julia instead, because of the compiler frustrating my attempts to just _write some goddamn code that works_.
-Even if a strict compiler only enforced the invariants you would otherwise manually enforce, compilers are obtuse, and extremely hard to persuade that no, this anti-pattern is actually appropriate in this situation. When a program's structure is freely controlled by humans, the humans can choose shortcuts and simple solutions: Rex the Dog could stay just two variables, and there really would be less boilerplate, even if there would also be some land mines.
+Even if a strict compiler only enforced the invariants you would otherwise manually enforce, compilers are obtuse, and extremely hard to persuade that no, this anti-pattern is actually appropriate in this situation.
+When a program's structure is freely controlled by humans, the humans can choose shortcuts and simple solutions: Rex the Dog could stay just two variables, and there really would be less boilerplate, even if there would also be some land mines.
 
-This post began with me recommending Python to a programming beginner, and not co-incidentally. Languages already require a large time investment to learn, and a language with _more stuff_ crammed into them, even well-designed stuff, requires an even larger investment.
-Large Python projects are infamous for ossifying by being crushed under their own un-manageable weight, but on the flip side, picking up Python requires relatively little. I certainly would not recommend Rust as anyone's first language.
+This post began with me recommending Python to a programming beginner, and not co-incidentally.
+Languages already require a large time investment to learn, and a language with _more stuff_ crammed into them, even well-designed stuff, requires an even larger investment.
+Large Python projects are infamous for ossifying by being crushed under their own un-manageable weight, but on the flip side, picking up Python requires relatively little.
+I certainly would not recommend Rust as anyone's first language.
 
 It's easy to empathize with the dilemma of managers responsible for a team of programmers in a green field project, who face the choice between spending months worth of salary onboarding new recruits who have to learn a hard language, half of who then leave, or instead picking an easier language they can get started on quickly.
 
 So, with disadvantages and advantages to the complexity of modern programming languages, what should one conclude?
-I'm afraid there can be no satisfying conclusion to this blog post. While I don't believe the answer is simply a matter of _opinion_, it's not exactly a matter of _fact_, either. The only resolution is for us as professionals to use our judgement.
+I'm afraid there can be no satisfying conclusion to this blog post.
+While I don't believe the answer is simply a matter of _opinion_, it's not exactly a matter of _fact_, either. The only resolution is for us as professionals to use our judgement.
