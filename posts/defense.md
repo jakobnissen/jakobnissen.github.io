@@ -143,7 +143,7 @@ Python used to not have a type system rich enough to express a concept like that
 
 And it fucking sucked.
 
-Not co-incidentally, recent versions of Python have introduced type hints backed by a complex type system, such that programmer can now express the very same idea as `collections.abc.Set[Option[numbers.Integral]]`.
+Not co-incidentally, recent versions of Python have introduced type hints backed by a complex type system, such that programmers can now express the very same idea as `collections.abc.Set[typing.Option[numbers.Integral]]`.
 And despite the complexity of this new type system, Python is better off for it.
 In fact, my best experience with Python since learning Julia has been opening up an old Python code base of mine, annotating everything with type hints, and running a type checker on it.
 
@@ -214,7 +214,7 @@ When a program's structure is freely controlled by humans, the humans can choose
 
 This post began with me recommending Python to a programming beginner, and not co-incidentally.
 Languages already require a large time investment to learn, and a language with _more stuff_ crammed into them, even well-designed stuff, requires an even larger investment.
-Large Python projects are infamous for ossifying by being crushed under their own un-manageable weight, but on the flip side, picking up Python requires relatively little.
+Large Python projects are infamous for ossifying under their own un-manageable weight, but on the flip side, picking up Python requires relatively little.
 I certainly would not recommend Rust as anyone's first language.
 
 It's easy to empathize with the dilemma of managers responsible for a team of programmers in a green field project, who face the choice between spending months worth of salary onboarding new recruits who have to learn a hard language, half of who then leave, or instead picking an easier language they can get started on quickly.
