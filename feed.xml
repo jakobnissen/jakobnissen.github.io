@@ -46,6 +46,25 @@
 
 <item>
   <title>
+    <![CDATA[  In defense of complicated programming languages  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/defense/index.html </link>
+  <guid> https://viralinstruction.com/posts/defense/index.html </guid>
+  <description>
+    <![CDATA[  A polemic critique of &#39;simple&#39; programming languages and a defense of complicated ones.  ]]>
+  </description>  
+    
+  <pubDate>Sun, 23 Jan 2022 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  Advent of Code 2021, day 1  ]]>
   </title>
   <link> https://viralinstruction.com/posts/aoc2021_1/index.html </link>
@@ -112,25 +131,6 @@
   </description>  
     
   <pubDate>Sun, 25 Jul 2021 00:00:00 +0000</pubDate>  
-  
-  
-  <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
-  </atom:author>
-        
-</item>
-
-<item>
-  <title>
-    <![CDATA[  In defense of complicated programming languages  ]]>
-  </title>
-  <link> https://viralinstruction.com/posts/defense/index.html </link>
-  <guid> https://viralinstruction.com/posts/defense/index.html </guid>
-  <description>
-    <![CDATA[  A polemic critique of &#39;simple&#39; programming languages and a defense of complicated ones.  ]]>
-  </description>  
-    
-  <pubDate>Sat, 23 Jan 2021 00:00:00 +0000</pubDate>  
   
   
   <atom:author>
