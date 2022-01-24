@@ -1,5 +1,5 @@
 @def rss = "A polemic critique of 'simple' programming languages and a defense of complicated ones."
-@def rss_pubdate = Dates.Date(2021, 01, 23)
+@def rss_pubdate = Dates.Date(2022, 01, 23)
 
 # In defense of complicated programming languages
 _Written 2022-01-23_
@@ -202,7 +202,7 @@ One can define a type to be a `struct`, `mutable struct`, `abstract type` and `p
 Types can be placed in the type hierarchy as either concrete types, abstract types, union types or unionall types.
 The _representation_ of types (i.e. type of types) can be either `DataType`, `Union`, `UnionAll`, or `Bottom`.
 
-This complexity is not completely _redundant_ as such, but it sure is a mouthful to learn, and it's to clear to me this design is the cleanest. Surely, it feels like, [this did not need to be so complicated](https://github.com/JuliaLang/julia/issues/29368).
+This complexity is not completely _redundant_ as such, but it sure is a mouthful to learn, and it's not clear to me this design is the cleanest. Surely, it feels like, [this did not need to be so complicated](https://github.com/JuliaLang/julia/issues/29368).
 
 The worst kind of features are duplicated APIs, usually because an old, poorly designed API sticks around only to satisfy backwards compatibility and perhaps a small group of users refusing to stop using it.
 I don't have any love for this sort of complexity in a language, and people are right to eschew it.
