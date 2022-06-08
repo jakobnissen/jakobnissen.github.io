@@ -1,5 +1,8 @@
+@def rss = "A practical guide to optimising Julia code."
+@def rss_pubdate = Dates.Date(2022, 06, 08)
+
 # How to optimise Julia code: A practical guide
-_Written 2022-06-01_
+_Written 2022-06-08_
 
 You only have to spend a few minutes on a Julia forum to notice that its users really, _really_ care about performance.
 If you have some Julia code you would like to be faster, simply post your snippet on [Discourse](https://discourse.julialang.org/) and claim that 'Julia's speed is overrated', and 'It's no faster than Python', then you can find a lightning fast version of your snippet when you revisit the thread.
@@ -8,10 +11,10 @@ Unfortunately, that approach doesn't really scale. For any real project, you hav
 
 But how?
 In those Julia threads, one stumbles across a wide variety of optimisation issues, and a correspondingly diverse set of tooling to cast light on them.
-I imagine that for newbie faced with performance problems, it can be disorienting.
+I imagine that for a newbie faced with performance problems, it can be disorienting.
 Where do you even begin?
 
-Given that Julians are a flock of performance-obssessed academics, there are surprinsingly few tutorials out there on optimisation of Julia code.
+Given that Julians are a flock of performance-obsessed academics, there are surprisingly few tutorials out there on optimisation of Julia code[^1].
 So I thought I'd write one, and this is it.
 
 It's written for Julia 1.7.3.
@@ -23,15 +26,15 @@ If so, write me a mail and I'll update this post!
 
 ## Preface
 ### Prerequisites: What to learn first
-You can't write fast code without knowing a few basics on how computers, algorithms, and Julia works - quite a few basics, actually. You should:
+You can't write fast code without knowing a few basics on how computers, algorithms, and Julia work - quite a few basics, actually. You should:
 
-* Read my [previous guide on computer hardware](https://viralinstruction.com/posts/hardware), unless you are already familiar with writing fast code in other programming languages. Preferably, you should also learn all the prerequisites of _that_ namely,
+* If you are unfamiliar with hardware concepts such as CPU caches, memory alignment, or using SIMD instructions, please first read my [guide on computer hardware](https://viralinstruction.com/posts/hardware). Preferably, you should also learn all the prerequisites of _that_ namely,
   * Basics concepts in algorithms like big-O notation
   * How integers and floats are represented in memory
   * The memory layout of strings and their encoding
   * The layout of `Array`s, and the difference between inline arrays and arrays of pointers
   * Common data structures like hash tables
-* Get a grasp on some Julia basics: What _type stability_ and _inferrability_ is, and get a working familiarity with the JIT compiler. 
+* Have a grasp on some Julia basics: What _type stability_ and _inferrability_ is, and have at least a little experience writing and running Julia code.
 * You should read the [official Julia performance tips](https://docs.julialang.org/en/v1/manual/performance-tips/).
 
 ### Learn when not to optimise
@@ -66,8 +69,8 @@ The how-to guide further down the post is laid out as a fixed list of instructio
 To work effectively, you need to be able to reach for the right tool at the right time.
 
 ### `@time`
-`@time` and the related macro `@timev` are some of the simplest, yet most useful tools in your toolbox.
-The `@time` macro will evaluate the following expression, and print the elapsed time.
+The `@time` macro and its verbose cousin `@timev` are some of the simplest, yet most useful tools in your toolbox.
+Running `@time` will evaluate the following expression, and print the elapsed time.
 It will also report estimates of compilation time, garbage collection time, and the number and size of allocations.
 
 This macro is most useful when a rough estimate is good enough.
@@ -152,6 +155,12 @@ julia> @btime sin($55.1)
 ```
 @@
 
+Be careful not to use global variables when benchmarking.
+Not using non-constant global variables in performance-sensitive code is the number one Julia performance tip, but it is easy to accidentally copy-paste the content of a function into the REPL for benchmarking, thereby defining the function's local variables in global scope.
+
+In general the interplay between the compiler and BenchmarkTools is a little tricky, and takes some effort getting used to.
+If in doubt, you can always ask in a Julia forum or chat.
+
 Another issue with BenchmarkTools is that modern CPUs have various components that analyse and adapt to code on a hardware level, while it is running:
 * Data and instructions are cached for fast repeated access
 * Branches are being predicted, enabling speculative execution
@@ -166,11 +175,11 @@ The branch predictor can be thwarted by benchmarking a larger example with milli
 Unfortunately, I don't know of any good way to get around these biases, or to detect if they skew your measurements.
 
 ### `@code_warntype`
-The `@code_warntype` macro is used to check if some code is type stable.
+The `@code_warntype` macro is used to check if some code is inferrible.
 Like other code introspection macros, you put it in front of a function call:
 
 @@juliacode
-```julia
+```plaintext
 julia> @code_warntype first(Any[1])
 MethodInstance for first(::Vector{Any})
   from first(a::AbstractArray) in Base at abstractarray.jl:398
@@ -191,7 +200,7 @@ Second, the arguments, with `#self#` signifying the function. Again, the content
 
 The third part is the _lowered code_ - Julia's compiler operates code using different representations with varying levels of abstraction.
 After the raw source code, the lowered code is the highest level representation.
-I can heartedly recommend any Julians to learn how to read lowered code (it's designed to be a simplified version of source code, so it's not that hard!) - but let's skip that now.
+I can heartily recommend any Julians to learn how to read lowered code (it's designed to be a simplified version of source code, so it's not that hard!) - but let's skip that now.
 
 Each local variable is denoted by the `%` sign, e.g. `%1 = Base.eachindex(a)`, and denoted with the type that the compiler is able to infer for the variable - in that case `Base.OneTo{Int64}`.
 The return variable is referred to as `Body`, and is placed above the lowered code.
@@ -199,10 +208,12 @@ The return variable is referred to as `Body`, and is placed above the lowered co
 When displaying the `@code_warntype` output in REPL, but unfortunately not on this blog, fully inferred (concrete) variables are coloured cyan, and abstract types are coloured red.
 In the example above, the result of the `getindex` call infers to `Any`, an abstract type, and is thus coloured red when shown in the REPL. 
 
+When optimising code, the crucial part is to look for the presence of these red coloured abstractly inferred variables which are detrimental to performance.
+
 Other non-concrete types are coloured in yellow, for example the `Union{Nothing, Int64}` in:
 
 @@juliacode
-```julia
+```plaintext
 julia> @code_warntype findfirst(isodd, [])
 MethodInstance for findfirst(::typeof(isodd), ::Vector{Any})
   from findfirst(testf::Function, A::Union{AbstractString, AbstractArray}) in Base at array.jl:2002
@@ -248,11 +259,11 @@ julia> @report_opt foldl(+, Any[], init=0)
 @@
 
 JET operates _statically_ on a type level, and is thus, not able to find _all_ type instabilities in your code.
-If your code contains a function call that is not statically inferrable, JET will report dynamic dispatch at that function call, but since the compiler (and thus JET) cannot infer across dynamic dispatch, JET can't report on any problems on the "other side", and therefore cannot find problems downstream of that call.
+If your code contains a function call that is not statically inferrible, JET will report dynamic dispatch at that function call, but since the compiler (and thus JET) cannot infer across dynamic dispatch, JET can't report on any problems on the "other side", and therefore cannot find problems downstream of that call.
 
 This limitation is normally not a big deal because only reporting the _first_ instance of inference problems in a call chain is usually sufficient to alert you of performance problems.
 
-### Cthultu
+### Cthulhu
 Cthulhu is not only a Lovecraftian cosmic horror, but also a Julia package that allows the user to interactively traverse a call graph, calling `@code_warntype` on each call encountered.
 
 The tag line of Cthulhu is "_the slow descent into madness_", which presumably refers to the user experience of manually stepping through a long call chain to diagnose inference issues.
@@ -272,7 +283,6 @@ When running the profiler, make sure the task you are profiling is representativ
 Say, for example, you have a program with two tasks where the first scales linearly with the input size, and the second scales quadratically.
 In that case whether you should spend your effort optimising the first or the second part depends a whole lot on the size of the inputs.
 You might profile with a small toy example and erroneously conclude that most time is spent in the first task.
-
 
 #### VSCode Julia profiler
 The stdlib profiler is useful on its own, but the Julia VSCode extension include the `@profview` macro, which improve the profiler with some _very useful_ capabilities:
@@ -296,10 +306,10 @@ Red lines mean dynamic dispatch (i.e. type instability) happened at that line.
 Yellow means the garbage collector kicked in, which happens during memory allocations.
 
 ## Walkthrough: How to optimise
-Now armed with knowledge of the available tooling, you can get started on your optimisation quest. What follows here is a list of things to try, in the order I recommend them.
+Now armed with knowledge of the available tooling, you can get started on your optimisation quest. Below I have written a list of things to try, in the order I recommend them.
 
 ### Ensure your code is type stable
-Type unstable Julia code is slow Julia code[^1].
+Type unstable Julia code is slow Julia code[^2].
 Indeed, the first tip of the [Julia performance tips](https://docs.julialang.org/en/v1/manual/performance-tips/) is to put code in functions instead of the global scope, so that it can be type stable.
 In fact, _most_ of the official  performance tips pertain to type stability.
 
@@ -343,7 +353,7 @@ Take the 10 kilometre birds-eye view of your code and ask yourself:
   That is, if the size of my input doubles, what does that imply for the running time of my code?
   Does it double? Quadruple? Even worse?
 
-* Can you approach the problem differently, or use any data structures that allows a better performance? Typical moves here may be to replace vectors with sets for faster membership testing, or avoiding the creation of collections using multiple rounds of concatenation.
+* Can you approach the problem differently, or use any data structures that allows a better performance? Typical moves here may be to replace large vectors with sets for faster membership testing, or avoiding the creation of collections using multiple rounds of concatenation.
   
 * Is the code doing needless repeated work? Without going into details about exactly _how_ the code is executed on a low level, does the code do stuff it doesn't need to that can be cut away?
   An example here may be code that runs a function `f` on an array in a loop, where `f` sorts the array first.
@@ -369,7 +379,7 @@ The packages `Setfield`, `StaticArrays`, `InlineStrings` and `StringViews` can c
 ### Create types for efficient representation
 It is often said that in Julia, abstraction is free in terms of performance.
 In my experience however, not only does abstraction cost nothing, it results in _faster_ code, if you create your abstractions with performance in mind.
-This is primarily because abstraction allows you to carve out and isolate a part of the code, and then to optimise it to your heart contends without it affecting the rest of the codebase.
+This is primarily because abstraction allows you to carve out and isolate a part of the code, and then to optimise it to your heart's contend without it affecting the rest of the codebase.
 
 Nowhere is this more effective than the creation of custom types with efficient memory layouts and methods specialized for your workloads.
 
@@ -382,14 +392,14 @@ Some other good examples of efficient custom types are:
 * My [CodonSet example code](https://github.com/jakobnissen/play/blob/master/revtrans.jl)
 * More advanced: Sabrina Ward's [Kmers.jl](https://github.com/BioJulia/Kmers.jl)
 
-Besides giving excellent performance, making your own types also gives better opportunities to enforce invariants of your data by making putting them in the constructors and the interfaces of your new type.
+Besides giving excellent performance, making your own types also gives better opportunities to enforce invariants of your data by putting them in the constructors and the interfaces of your new type.
 
 A practical advice is to look through your code and see when you _conceptually_ use a type whose structure is not perfectly captured by any existing types in your code.
 For example, if you see `Vector{Tuple{String, UInt8, DNA}}`, in your code, then it probably means you need to refactor the tuple out to a new struct, which you then can optimise.
 
 ### Use multiple threads
 If your task is easily parallelisable, you can make your code several times faster by using multiple threads.
-But beware: Introducing multithreading to a program opens a whole can of nasty concurrency bugs, and I would avoid doing it unless the extra speed is needed - hence why this active is far down the list.
+But beware: Introducing multithreading to a program opens a whole can of nasty concurrency bugs, and I would avoid doing it unless the extra speed is needed - hence why this advice is far down the list.
 
 Multithreading is easiest (and usually most effective) to do on a coarse-grained level, on loops high up in the call chain.
 This is because thread spawning and management has some overhead.
@@ -445,7 +455,7 @@ end
 @@
 
 ### Review generated assembly
-If your code spends most its time a few core functions, it can pay off to inspect the assembly code generated by these functions and micro-optimise them.
+If your code spends most of its time in a few core functions, it can pay off to inspect the assembly code generated by these functions and micro-optimise them.
 I prefer reading the native code from `@code_native` because I find it more readable than the LLVM code generated by `@code_llvm`, but others prefer LLVM.
 
 Some people think that having assembly code guide your optimisation is a terrible idea, because assembly is too far removed from idiomatic Julia.
@@ -478,4 +488,6 @@ Branches can also directly slow your code down by causing branch mispredictions.
 Lastly, in my experience, LLVM is very, very good at optimising non-branch instructions, especially bitwise operators, but usually can't optimise away non-dead branches.
 Find any out-of-place branches, and simplify your code to remove them.
 
-[^1]: Already here I violate the advice I gave in the preface: To not think of certain operations as inherently slow. Type instability causes dynamic dispatch, which typically take tens to hundreds of nanoseconds. There are plenty of context where a fraction of a microsecond is negligible. Use your judgement.
+[^1]: As it turns out, there are actually quite a few already. I quickly discovered that when I shared this post with the broader Julia community: [this](https://gdalle.github.io/JuliaPerf-CERMICS/) and [this](https://www.juliafordatascience.com/performance-tips/) and  [this](https://huijzer.xyz/posts/inference/) and [this](https://www.stochasticlifestyle.com/7-julia-gotchas-handle/) and [this](https://www.youtube.com/watch?v=h-xVBD2Pk9o) and [this](https://www.youtube.com/watch?v=M2i7sSRcSIw) and [this](https://www.youtube.com/watch?v=9C7MAAsMMBc) and possibly several more I have missed.
+
+[^2]: Already here I violate the advice I gave in the preface: To not think of certain operations as inherently slow. Type instability causes dynamic dispatch, which typically take tens to hundreds of nanoseconds. There are plenty of contexts where a fraction of a microsecond is negligible. Use your judgement.
