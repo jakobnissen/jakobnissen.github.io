@@ -277,7 +277,7 @@ You might profile with a small toy example and erroneously conclude that most ti
 #### VSCode Julia profiler
 The stdlib profiler is useful on its own, but the Julia VSCode extension include the `@profview` macro, which improve the profiler with some _very useful_ capabilities:
 
-[PICTURE HERE]
+![](/assets/profview.png)
 
 In the picture above, you see two panels: The code itself on the left, and the profiler results are displayed as a so-called _flame graph_ on the right. Let's review the flame graph first.
 
