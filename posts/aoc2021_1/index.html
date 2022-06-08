@@ -229,7 +229,6 @@ BenchmarkTools.Trial: 10000 samples with 1 evaluation.
 <p>Second, the <code>parse</code> function tries to autodetect the base, such that parsing of e.g. base 16 text works automatically. That&#39;s nice, but the check is a little slow, so let&#39;s specify the base is 10. This is also more correct, so that&#39;s nice.</p>
 <p>Another issue is fold-based iterators like <code>sum</code>. Their behaviour is undefined for empty collections &#40;what&#39;s the sum of nothing?&#41;, so they throw an error in Julia. The potential to throw is both an edge case I ought to cover, and slows the code down a little. This can be prevented by setting the <code>init</code> keyword, giving it an initial value to start from.</p>
 <p>Lastly, for some bizzare reason, iterating a view is inefficient in Julia compared to indexing. That really really ought to be fixed, but for now, let&#39;s change the <code>zip</code> iterator to a solution that uses indexing:</p>
-<p>Another issue is fold-based iterators like <code>sum</code>. Their behaviour is undefined for empty collections &#40;what&#39;s the sum of nothing?&#41;, so they throw an error in Julia. This can be prevented by setting the <code>init</code> keyword, giving it an initial value to start from:</p>
 <div class=juliacode ><pre><code class=language-plaintext >function solve&#40;io::IO&#41;
     zipdiff&#40;a, b&#41; &#61; sum&#40;&#40;@inbounds b&#91;i&#93; &gt; a&#91;i&#93; for i in eachindex&#40;b&#41;&#41;, init&#61;0&#41;
     v &#61; &#91;parse&#40;Int, line, base&#61;10&#41; for line in eachline&#40;io&#41;&#93;
@@ -261,7 +260,7 @@ main&#40;ARGS&#91;1&#93;&#41;</code></pre></div>
 <p>Which runs in less than 1 second including startup time.</p>
 <div class=page-foot >
   <div class=copyright >
-    Jakob Nybo Nissen. Last modified: May 04, 2022. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
+    Jakob Nybo Nissen. Last modified: June 08, 2022. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
   </div>
 </div>
 </div>
