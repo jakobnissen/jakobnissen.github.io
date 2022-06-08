@@ -46,6 +46,25 @@
 
 <item>
   <title>
+    <![CDATA[  How to optimise Julia code: A practical guide  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/optimise/index.html </link>
+  <guid> https://viralinstruction.com/posts/optimise/index.html </guid>
+  <description>
+    <![CDATA[  A practical guide to optimising Julia code.  ]]>
+  </description>  
+    
+  <pubDate>Wed, 08 Jun 2022 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  In defense of complicated programming languages  ]]>
   </title>
   <link> https://viralinstruction.com/posts/defense/index.html </link>
