@@ -4,11 +4,12 @@ _Written 2022-06-01_
 You only have to spend a few minutes on a Julia forum to notice that its users really, _really_ care about performance.
 If you have some Julia code you would like to be faster, simply post your snippet on [Discourse](https://discourse.julialang.org/) and claim that 'Julia's speed is overrated', and 'It's no faster than Python', then you can find a lightning fast version of your snippet when you revisit the thread.
 
-Unfortunately, that approach doesn't really scale. You have to do the performance tuning yourself.
+Unfortunately, that approach doesn't really scale. For any real project, you have to do the performance tuning yourself.
 
 But how?
 In those Julia threads, one stumbles across a wide variety of optimisation issues, and a correspondingly diverse set of tooling to cast light on them.
-I imagine that for newbie faced with performance problems, it can be disorienting and hard to know where to begin.
+I imagine that for newbie faced with performance problems, it can be disorienting.
+Where do you even begin?
 
 Given that Julians are a flock of performance-obssessed academics, there are surprinsingly few tutorials out there on optimisation of Julia code.
 So I thought I'd write one, and this is it.
@@ -24,7 +25,7 @@ If so, write me a mail and I'll update this post!
 ### Prerequisites: What to learn first
 You can't write fast code without knowing a few basics on how computers, algorithms, and Julia works - quite a few basics, actually. You should:
 
-* Read my [previous guide on computer hardware](https://viralinstruction.com/posts/hardware), unless you are already familiar with writing fast code in other programming languages. Preferrably, you should also learn all the prerequisites of _that_ namely,
+* Read my [previous guide on computer hardware](https://viralinstruction.com/posts/hardware), unless you are already familiar with writing fast code in other programming languages. Preferably, you should also learn all the prerequisites of _that_ namely,
   * Basics concepts in algorithms like big-O notation
   * How integers and floats are represented in memory
   * The memory layout of strings and their encoding
@@ -46,10 +47,10 @@ When it comes to code performance, these labels are meaningless without a point 
 CPUs can do a billion operations in the time it takes a human to blink.
 That is so fast our human intuitions of "slow" and "fast" break down:
 
-A ten nanosecond operation may be considered slow compared to other CPU instructions,
+A ten nanosecond operation may be considered slow compared to arithmetic functions like multiplication,
 but is insignificant compared to a one microsecond syscall.
-Conversely, a one microsecond syscall is immaterial compared to a one milisecond file read,
-which is still imperceptably fast on a human scale.
+Conversely, a one microsecond syscall is immaterial compared to a one millisecond file read,
+which is still imperceptibly fast on a human scale.
 Because "slow operations" can still be plenty fast on the scale that matters,
 any absolute categorisation of code patterns as "slow" or "fast" will mislead you.
 
@@ -70,7 +71,7 @@ The `@time` macro will evaluate the following expression, and print the elapsed 
 It will also report estimates of compilation time, garbage collection time, and the number and size of allocations.
 
 This macro is most useful when a rough estimate is good enough.
-Because it simply uses a timer, its inaccuracy makes it unsuitable for code that takes less than about one milisecond to run.
+Because it simply uses a timer, its inaccuracy makes it unsuitable for code that takes less than about one millisecond to run.
 
 ### BenchmarkTools
 When `@time` is too inaccurate, particularly for small, fast functions, the similar macros `@btime` and `@benchmark`, provided by the BenchmarkTools package, come in handy.
@@ -112,7 +113,7 @@ BenchmarkTools.Trial: 8760 samples with 1000 evaluations.
 It's not always clear when a function has deterministic running time, and if you mistakenly think so, the minimum time can be horribly misleading.
 Therefore, I recommend just always using `@benchmark` and looking at the median and mean time instead of `@btime`.
 
-#### Common BenchmarkTools gotchas
+#### Common BenchmarkTools pitfalls
 Because BenchmarkTools' macros create and run a closure, the benchmarking is vulnerable to being defeated by the optimising compiler,
 which may optimise away all the work. For example, here:
 
@@ -139,7 +140,7 @@ CodeInfo(
 ```
 @@
 
-Which is instantenous.
+Which is instantaneous.
 You should see the BenchmarkTools documentation for how to handle these cases.
 This particular case can be handled by _interpolating_ the value in using `$`:
 
@@ -158,7 +159,7 @@ Another issue with BenchmarkTools is that modern CPUs have various components th
 
 For more information on these, see my [hardware introduction post](https://viralinstruction.com/posts/hardware).
 
-Because BenchmarkTools run their closures repeatedly in a tight loop, the CPU is able to adapt extraordinariy well to the code compared to what it would be able to when executing your code in a realistic setting.
+Because BenchmarkTools run their closures repeatedly in a tight loop, the CPU is able to adapt extraordinarily well to the code compared to what it would be able to when executing your code in a realistic setting.
 As a result, the true running time is often quite significantly underestimated.
 
 The branch predictor can be thwarted by benchmarking a larger example with millions of branches, but larger examples will not necessarily reflect the branching pattern of your code in the wild.
@@ -188,17 +189,17 @@ From top to bottom, it displays three pieces of information:
 First, _which method instance_ was called. Hopefully you already knew this - if you don't know what code you are running, you are going to have a hard time optimising it!
 Second, the arguments, with `#self#` signifying the function. Again, the content here should not be surprising.
 
-The third part is the _lowered code_ - Julias compiler operates code using different representations with varying levels of abstraction.
+The third part is the _lowered code_ - Julia's compiler operates code using different representations with varying levels of abstraction.
 After the raw source code, the lowered code is the highest level representation.
-I can heartedly recommend any Julians to learn how to read lowered code (it's designed to be a simiplified version of source code, so it's not that hard!) - but let's skip that now.
+I can heartedly recommend any Julians to learn how to read lowered code (it's designed to be a simplified version of source code, so it's not that hard!) - but let's skip that now.
 
 Each local variable is denoted by the `%` sign, e.g. `%1 = Base.eachindex(a)`, and denoted with the type that the compiler is able to infer for the variable - in that case `Base.OneTo{Int64}`.
 The return variable is referred to as `Body`, and is placed above the lowered code.
 
-When displaying the `@code_warntype` output in REPL, but unfortunately not on this blog, fully inferred (concrete) variables are colored cyan, and abstract types are colored red.
-In the example above, the result of the `getindex` call infers to `Any`, an abstract type, and is thus colored red when shown in the REPL. 
+When displaying the `@code_warntype` output in REPL, but unfortunately not on this blog, fully inferred (concrete) variables are coloured cyan, and abstract types are coloured red.
+In the example above, the result of the `getindex` call infers to `Any`, an abstract type, and is thus coloured red when shown in the REPL. 
 
-Other non-concrete types are colored in yellow, for example the `Union{Nothing, Int64}` in:
+Other non-concrete types are coloured in yellow, for example the `Union{Nothing, Int64}` in:
 
 @@juliacode
 ```julia
@@ -254,17 +255,17 @@ This limitation is normally not a big deal because only reporting the _first_ in
 ### Cthultu
 Cthulhu is not only a Lovecraftian cosmic horror, but also a Julia package that allows the user to interactively traverse a call graph, calling `@code_warntype` on each call encountered.
 
-The tagline of Cthulhu is "_the slow descent into madness_", which presumably refers to the user experience of manually stepping through a long call chain to diagnose inference issues.
+The tag line of Cthulhu is "_the slow descent into madness_", which presumably refers to the user experience of manually stepping through a long call chain to diagnose inference issues.
 I recommend just using JET over Cthulhu, and only mention the package here because you might find references to it in posts that predate JET.
 
 ### Profiler
 Julia comes with [the stdlib package `Profile`](https://docs.julialang.org/en/v1/manual/profile/) which is simple, but effective.
-It works by running your code and intermittently (e.g. every milisecond) pausing execution, sifting through the call stack and tallying each method in the stack.
+It works by running your code and intermittently (e.g. every millisecond) pausing execution, sifting through the call stack and tallying each method in the stack.
 When it has run for a few seconds, it thus has several thousand samples of which methods were being executed during the run.
 If e.g. 1/100th of call stack samples contained the function `foo`, you can assume that about 1/100th of running time was spent in `foo`.
 
 This assumption is not precise because the finite number of stack samples cause sampling noise, but it is usually good enough.
-It is possible for code to exhibit some kind of temporal pattern that will bias the sampling - for example, if your code happen to call a particular function every milisecond, this function may end up in a huge number of samples just by virtue of its timing being correlated with the sampling frequency.
+It is possible for code to exhibit some kind of temporal pattern that will bias the sampling - for example, if your code happen to call a particular function every millisecond, this function may end up in a huge number of samples just by virtue of its timing being correlated with the sampling frequency.
 I suspect that will happen very rarely, though.
 
 When running the profiler, make sure the task you are profiling is representative of your workload.
@@ -274,21 +275,21 @@ You might profile with a small toy example and erroneously conclude that most ti
 
 
 #### VSCode Julia profiler
-The stdlib profiler is useful on its own, but the Julia VSCode extension include the `@profview` macro, which improve the profiler with some _very useful_ capabilities.
+The stdlib profiler is useful on its own, but the Julia VSCode extension include the `@profview` macro, which improve the profiler with some _very useful_ capabilities:
 
 [PICTURE HERE]
 
 In the picture above, you see two panels: The code itself on the left, and the profiler results are displayed as a so-called _flame graph_ on the right. Let's review the flame graph first.
 
-Each of the colored boxes represents a line of source code. They are labeled by the function the line occurs in.
+Each of the coloured boxes represents a line of source code. They are labelled by the function the line occurs in.
 The one at the top represents the top-most function call. Since the VSCode profiler is called from the REPL, the first several boxes from the top stem from from functions internal to the REPL and profiler.
-These have neglible overhead, and can usually be ignored - though make sure to not analyse your first call to `@profiler`, so you don't accidentally profile compilation of the profiling code itself.
+These have negligible overhead, and can usually be ignored - though make sure to not analyse your first call to `@profiler`, so you don't accidentally profile compilation of the profiling code itself.
 
 The width of the box is proportional to the number of samples containing that line of code.
 A box placed below another means that the top box's function called the bottom box's function.
 If you mouse-over the boxes, it will show you which line of code is represented by the box. Clicking the box will open your editor at that line.
 
-On the left side of the picture, in the source code, you can see some of the lines have been highlighted with colored bars whose length are proportional to the number of samples that included that line.
+On the left side of the picture, in the source code, you can see some of the lines have been highlighted with coloured bars whose length are proportional to the number of samples that included that line.
 
 The profiler gives one more piece of information: The color of the boxes (and code line highlights).
 Red lines mean dynamic dispatch (i.e. type instability) happened at that line.
@@ -303,7 +304,7 @@ Indeed, the first tip of the [Julia performance tips](https://docs.julialang.org
 In fact, _most_ of the official  performance tips pertain to type stability.
 
 Not only is type stable code faster, it is also _better_ than unstable code:
-* Type stabilsing your code often improve various of code quality, in my expeirence.
+* Type stabilising your code often improve various of code quality, in my experience.
   I'm not entirely sure _why_ it is so - perhaps type stability code encourages small generic functions - or discourages type confusion.
 * Type stable code can be precompiled better and lead to fewer [invalidations](https://julialang.org/blog/2020/08/invalidations/),
   reducing Julia's annoying compile-time latency.
@@ -312,7 +313,7 @@ Not only is type stable code faster, it is also _better_ than unstable code:
 
 Newcomers to Julia have to pay attention when coding to write type stable code, but don't worry:
 It quickly becomes second nature.
-With experience, writing type stable code is effortless, and you develop an intuition of the rare occations when you are writing a function that might be type unstable.
+With experience, writing type stable code is effortless, and you develop an intuition of the rare occasions when you are writing a function that might be type unstable.
 In those situations, you can use `@code_warntype` to check your functions as you are writing them.
 
 If you've written a larger chunk of code, and you don't feel confident you have caught _all_ instances of type stability, you can run JET's optimisation analysis on some high-level function calls to check them and all their callees.
@@ -335,7 +336,7 @@ If dynamic dispatch or allocations show up where you don't expect them to, that 
 The largest performance gains are reaped not from small tweaks, but from using the appropriate algorithms to solve your problem.
 Now that you know _where_ to optimise, begin by reviewing your _approach_ to the problem.
 
-Take the 10 kilometer birds-eye view of your code and ask yourself:
+Take the 10 kilometre birds-eye view of your code and ask yourself:
 
 * How do the speed of my approach scale with input size?
   For this, you should think in terms of [Big-O notation](https://en.wikipedia.org/wiki/Big_O_notation).
@@ -398,7 +399,7 @@ A simple way to begin is to find the highest-level parallelisable for loop in yo
 If you are more comfortable with a functional style of programming, the package Folds.jl and the broader JuliaFolds ecosystem have types and functions that enable automatically parallelisable folds.
 For example, `Folds.reduce(op, collection)` works analogous to `Base.reduce`, but is parallel by default.
 
-For more advanced uses, you can micromanage individual threads using the primitives in the Base submodile `Threads`.
+For more advanced uses, you can micromanage individual threads using the primitives in the Base submodule `Threads`.
 Messing around manually with threads is so error prone that I don't recommend doing this unless necessary for performance.
 
 ### Reduce memory consumption
@@ -477,4 +478,4 @@ Branches can also directly slow your code down by causing branch mispredictions.
 Lastly, in my experience, LLVM is very, very good at optimising non-branch instructions, especially bitwise operators, but usually can't optimise away non-dead branches.
 Find any out-of-place branches, and simplify your code to remove them.
 
-[^1]: Already here I violate the advice I gave in the preface: To not think of certain operations as inherently slow. Type instability causes dynamic dispatch, which typically take tens to hundreds of nanoseconds. There are plenty of context where a fraction of a microsecond is neglible. Use your judgement.
+[^1]: Already here I violate the advice I gave in the preface: To not think of certain operations as inherently slow. Type instability causes dynamic dispatch, which typically take tens to hundreds of nanoseconds. There are plenty of context where a fraction of a microsecond is negligible. Use your judgement.
