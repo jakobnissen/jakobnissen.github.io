@@ -58,7 +58,7 @@ Because "slow operations" can still be plenty fast on the scale that matters,
 any absolute categorisation of code patterns as "slow" or "fast" will mislead you.
 
 Lastly, be aware that the contents of this post are rules of thumb.
-Any particular advice on how to optimise a piece of code is like advice on on how to fix your car:
+Any particular advice on how to optimise a piece of code is like advice on how to fix your car:
 Whether or not it is useful _to you_ depends a whole lot on what the problem was in the first place.
 What I can offer here is a good default workflow for finding and eliminating inefficiencies -
 but of course I can't predict which inefficiencies cause _your code_ to run slow, so you need to apply your knowledge to your own code's particularities.
@@ -117,7 +117,10 @@ It's not always clear when a function has deterministic running time, and if you
 Therefore, I recommend just always using `@benchmark` and looking at the median and mean time instead of `@btime`.
 
 #### Common BenchmarkTools pitfalls
-Because BenchmarkTools' macros create and run a closure, the benchmarking is vulnerable to being defeated by the optimising compiler,
+Be careful not to use global variables when benchmarking.
+Not using non-constant global variables in performance-sensitive code is the number one Julia performance tip, but it is easy to accidentally copy-paste the content of a function into the REPL for benchmarking, thereby defining the function's local variables in global scope.
+
+Another issue is that, because BenchmarkTools' macros create and run a closure, the benchmarking is vulnerable to being defeated by the optimising compiler,
 which may optimise away all the work. For example, here:
 
 @@juliacode
@@ -155,13 +158,11 @@ julia> @btime sin($55.1)
 ```
 @@
 
-Be careful not to use global variables when benchmarking.
-Not using non-constant global variables in performance-sensitive code is the number one Julia performance tip, but it is easy to accidentally copy-paste the content of a function into the REPL for benchmarking, thereby defining the function's local variables in global scope.
-
-In general the interplay between the compiler and BenchmarkTools is a little tricky, and takes some effort getting used to.
+The particular issue should be fixed when using BenchmarkTools with the upcoming version 1.8 release of Julia.
+But in general, the interplay between the compiler and BenchmarkTools is tricky and subject to change over time, and takes some effort getting the hang of the common pitfalls.
 If in doubt, you can always ask in a Julia forum or chat.
 
-Another issue with BenchmarkTools is that modern CPUs have various components that analyse and adapt to code on a hardware level, while it is running:
+A more fundamental problem with using BenchmarkTools is that modern CPUs have various components that analyse and adapt to code on a hardware level, while it is running:
 * Data and instructions are cached for fast repeated access
 * Branches are being predicted, enabling speculative execution
 * Memory is being prefetched when an access pattern is detected
@@ -285,14 +286,14 @@ In that case whether you should spend your effort optimising the first or the se
 You might profile with a small toy example and erroneously conclude that most time is spent in the first task.
 
 #### VSCode Julia profiler
-The stdlib profiler is useful on its own, but the Julia VSCode extension include the `@profview` macro, which improve the profiler with some _very useful_ capabilities:
+The stdlib profiler is useful on its own, but the Julia VSCode extension includes the `@profview` macro, which improves the profiler with some _very useful_ capabilities:
 
 ![](/assets/profview.png)
 
 In the picture above, you see two panels: The code itself on the left, and the profiler results are displayed as a so-called _flame graph_ on the right. Let's review the flame graph first.
 
 Each of the coloured boxes represents a line of source code. They are labelled by the function the line occurs in.
-The one at the top represents the top-most function call. Since the VSCode profiler is called from the REPL, the first several boxes from the top stem from from functions internal to the REPL and profiler.
+The one at the top represents the top-most function call. Since the VSCode profiler is called from the REPL, the first several boxes from the top stem from functions internal to the REPL and profiler.
 These have negligible overhead, and can usually be ignored - though make sure to not analyse your first call to `@profiler`, so you don't accidentally profile compilation of the profiling code itself.
 
 The width of the box is proportional to the number of samples containing that line of code.
@@ -314,8 +315,8 @@ Indeed, the first tip of the [Julia performance tips](https://docs.julialang.org
 In fact, _most_ of the official  performance tips pertain to type stability.
 
 Not only is type stable code faster, it is also _better_ than unstable code:
-* Type stabilising your code often improve various of code quality, in my experience.
-  I'm not entirely sure _why_ it is so - perhaps type stability code encourages small generic functions - or discourages type confusion.
+* Type stabilising your code often improve various aspects of code quality, in my experience.
+  I'm not entirely sure _why_ it is so - perhaps type stable code encourages small generic functions - or discourages type confusion.
 * Type stable code can be precompiled better and lead to fewer [invalidations](https://julialang.org/blog/2020/08/invalidations/),
   reducing Julia's annoying compile-time latency.
 * Type stable code is statically analysable and enables tooling like JET to help you with your code. 
@@ -384,7 +385,7 @@ This is primarily because abstraction allows you to carve out and isolate a part
 Nowhere is this more effective than the creation of custom types with efficient memory layouts and methods specialized for your workloads.
 
 As a case study, consider InlineStrings' type `String31`.
-It is an `AbstractString` that can hold any `String` of 31 code units or fewer - but it has the same memory layout as a 32-bit integer, meaning it can be stored inline in arrays or in a single register.
+It is an `AbstractString` that can hold any `String` of 31 code units or fewer - but it has the memory layout of a 256-bit integer, meaning it can be stored inline in arrays or in a single SIMD register.
 When dealing with large arrays of strings that are known to be a fixed size (e.g. identifiers), choosing `String31` over `String` can make a massive performance difference.
 
 Some other good examples of efficient custom types are:
@@ -449,7 +450,7 @@ Store the same data like this:
 ```julia
 struct FooArray
 	as::Vector{Int32}
-	bs::Vector{Int16}
+	bs::Vector{UInt16}
 end
 ```
 @@
