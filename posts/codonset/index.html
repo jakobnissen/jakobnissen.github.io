@@ -1,150 +1,150 @@
-<!doctype html> <html lang=en > <meta charset=UTF-8 > <meta name=viewport  content="width=device-width, initial-scale=1"> <link rel=stylesheet  href="/libs/katex/katex.min.css"> <link rel=stylesheet  href="/libs/highlight/github.min.css"> <link rel=stylesheet  href="/css/franklin.css"> <link rel=stylesheet  href="/css/basic.css"> <link rel=icon  href="/assets/v.svg"> <title>Implementing reverse translation</title> <header> <div class=blog-name ><a href="/">viralinstruction</a></div> <nav> <ul> <li><a href="/">Home</a> <li><a href="/about/">About</a> <li><a href="/feed.xml">RSS</a> </ul> <img src="/assets/hamburger.svg" id=menu-icon > </nav> </header> <div class=franklin-content ><h1 id=implementing_reverse_translation ><a href="#implementing_reverse_translation" class=header-anchor >Implementing reverse translation</a></h1> <p>I quite like writing high-performance bioinformatics code. It&#39;s just so satisfying when you get the abstractions <em>just right</em> to express a biological idea elegantly in code.</p> <p>Recently, I came across a biological problem which is particularly nice to implement. It&#39;s nice because it&#39;s small and simple, contains some real biology, and shows how choosing good abstractions can lead to generic and yet efficient code.</p> <p>This post is a kind of live &quot;coding session&quot;. Or, not live, just a coding session. There is no grand point to be made - just a walkthrough of a satisfying implementation.</p> <p>If you want to follow along, you can find the code &#40;with slight modifications&#41; <a href="https://github.com/jakobnissen/play/blob/master/revtrans.jl">here &#40;click&#41;</a>.</p> <h2 id=background ><a href="#background" class=header-anchor >Background</a></h2> <p>The basic flow of genetic information is identical for all living cells on earth<sup id="fnref:1"><a href="#fndef:1" class=fnref >[1]</a></sup> : The genome is stored as DNA, a chemically stable molecule fit for long-term storage. When in use, temporary copies of relevant parts of the DNA genome are made, copies made from RNA; a more chemically active and useful molecule than DNA, but therefore shorter-lived. RNA can be thought of as a string composed of 4 molecules: A, C, G, and U, called <em>bases</em>. The information in RNA comes entirely from the order of its bases<sup id="fnref:2"><a href="#fndef:2" class=fnref >[2]</a></sup>. This way, RNA is digital information stored in base 4. Through an elaborate mechanism called <em>translation</em>, the information in the RNA copies are used by the cell to manufacture proteins.</p> <p>During translation, the RNA string is fed like a tape into a nanomachine called a <em>ribosome</em>. The ribosome reads three RNA bases at a time, then moves the RNA string three bases and reads the next three. Each RNA 3-gram, called a <em>codon</em>, is mapped to an amino acid by the ribosome. For example, the RNA molecule <code>UCCGAUAAU</code> is read and mapped like this:</p> <pre><code class=language-plaintext >UCC -&gt; Serine &#40;S&#41;
-GAU -&gt; Aspartic acid &#40;D&#41;
-AAU -&gt; Asparagine &#40;N&#41;</code></pre> <p>, and thus translated to the amino acid chain <code>SDN</code>. Amino acid chains are called proteins, and besides being a major factor in reaping sick gainz in the gym, proteins are a major component of life forms on Earth. The &quot;mapping function&quot; from codons to the 20 different amino acids<sup id="fnref:3"><a href="#fndef:3" class=fnref >[3]</a></sup> is called <em>the genetic code</em>. You might have realized that there being 20 amino acids has an implication for the genetic code: Since there are <span class=katex ><span class=katex-mathml ><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>4</mn><mn>3</mn></msup><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">4^3 = 64</annotation></semantics></math></span><span class=katex-html  aria-hidden=true ><span class=base ><span class=strut  style="height:0.8141079999999999em;vertical-align:0em;"></span><span class=mord ><span class=mord >4</span><span class=msupsub ><span class=vlist-t ><span class=vlist-r ><span class=vlist  style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class=pstrut  style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span></span></span></span></span><span class=mspace  style="margin-right:0.2777777777777778em;"></span><span class=mrel >=</span><span class=mspace  style="margin-right:0.2777777777777778em;"></span></span><span class=base ><span class=strut  style="height:0.64444em;vertical-align:0em;"></span><span class=mord >64</span></span></span></span> different codons and only 20 amino acids, some amino acids must be coded for by multiple codons, so-called <em>degeneracy</em>. Part of the reason for degeneracy is <a href="https://en.wikipedia.org/wiki/Wobble_base_pair">wobble base pairs</a>: The physical mechanism used by the ribosome to match codons with amino acids is not precise due to the physical construction of the ribosome, causing some codons to match with the &quot;wrong&quot;, or rather, imperfectly specified amino acid.</p> <p>As a side note, I find it interesting to which extent the genetic code is arbitrary, and to which extent it is constrained by physical processes like wobbling. While I&#39;m not too much into the literature on this topic, the consensus seem to be that while there are some constraints, the huge amount of possible genetic codes would make it exceedingly unlikely that the same, or almost same, genetic code evolved twice independently. And yet, all life forms use the same genetic code, from anteaters to subterranean bacteria. This is pretty good evidence that all life on earth descends from a single common ancestor.</p> <p>Well, the same code is used by <em>almost</em> all organisms. As always in biology, there are <a href="https://en.wikipedia.org/wiki/List_of_genetic_codes">exceptions</a>, but these are truly exceptional, and the deviations from the standard genetic code are minor.</p> <p>Evolutionarily, it makes sense that the genetic code is nearly universal. Any mutation that changes the genetic code itself is equivalent to changing every single gene in the genome at once - surely such a mutation must be immediately lethal. Hence, once a genetic code appeared in some proto-organism, and its entire genome came to use it, it became fixed and unable to evolve. It&#39;s likely that the standard genetic code has been unchanged for billions of years, since the most advanced life form on Earth was far simpler than a current bacterium.</p> <h2 id=reverse_translation ><a href="#reverse_translation" class=header-anchor >Reverse translation</a></h2> <p>Anyway, back to computers. So, nature <em>translates</em> RNA to protein. We don&#39;t know of any natural process that does the opposite - translates amino acids to RNA, and it probably doesn&#39;t exist - but it can sometimes be useful to do this kind of reverse translation <em>in silico</em> when analyzing biological sequences. How do we implement it in software?</p> <p>The first observation is that an amino acid can&#39;t be reverse translated to a single codon. Because the genetic code is degenerate, an amino acid can possibly map onto multiple codons. For example, the amino acid glutamine &#40;Q&#41; can map to <code>CAA</code> or <code>CAG</code>. Hence, we must map amino acids to <em>sets</em> of codons instead of single codons.</p> <p>The second observation is that there are multiple different genetic codes. Instead of writing multiple implementations of reverse translation, one for each genetic code, we should be able to make some kind of object representing a genetic code and refer to that when doing reverse translation.</p> <p>For our implementation, we should lean on the package <code>BioSequences.jl</code>. It already implements types for RNA, amino acids, biological sequences, and even genetic codes and translation. It doesn&#39;t have any reverse translation functionality, though - that&#39;s what we&#39;re here for&#33;</p> <h3 id=implementing_the_codonset ><a href="#implementing_the_codonset" class=header-anchor >Implementing the CodonSet</a></h3> <p>Reverse translating an amino acid should yield a <code>CodonSet</code>. Since there are <span class=katex ><span class=katex-mathml ><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>4</mn><mn>3</mn></msup><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">4^3 = 64</annotation></semantics></math></span><span class=katex-html  aria-hidden=true ><span class=base ><span class=strut  style="height:0.8141079999999999em;vertical-align:0em;"></span><span class=mord ><span class=mord >4</span><span class=msupsub ><span class=vlist-t ><span class=vlist-r ><span class=vlist  style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class=pstrut  style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span></span></span></span></span><span class=mspace  style="margin-right:0.2777777777777778em;"></span><span class=mrel >=</span><span class=mspace  style="margin-right:0.2777777777777778em;"></span></span><span class=base ><span class=strut  style="height:0.64444em;vertical-align:0em;"></span><span class=mord >64</span></span></span></span> codons, we can encode a <code>CodonSet</code> in a 64-bit integer, with each bit from least to most significant representing a codon in alphabetical order from <code>AAA</code> to <code>UUU</code>. Conveniently, the internal representation <code>BioSequences.jl</code> uses for fixed-length nucleic acid sequences like codons are 64-bit integers: The codons <code>AAA</code> to <code>UUU</code> are represented by the numbers 0 to 63. This is great news&#33; CPUs are optimized for operating on bits of integers, so we should be able to use this fact to create <em>very</em> efficient code for our <code>CodonSets</code>.</p> <div class=juliacode ><pre><code class=language-plaintext >using BioSequences
+<!doctype html> <html lang=en > <meta charset=UTF-8 > <meta name=viewport  content="width=device-width, initial-scale=1"> <link rel=stylesheet  href="/libs/katex/katex.min.css"> <link rel=stylesheet  href="/libs/highlight/github.min.css"> <link rel=stylesheet  href="/css/franklin.css"> <link rel=stylesheet  href="/css/basic.css"> <link rel=icon  href="/assets/v.svg"> <title>Implementing reverse translation</title> <header> <div class=blog-name ><a href="/">viralinstruction</a></div> <nav> <ul> <li><a href="/">Home</a> <li><a href="/about/">About</a> <li><a href="/feed.xml">RSS</a> </ul> <img src="/assets/hamburger.svg" id=menu-icon > </nav> </header> <div class=franklin-content ><h1 id=implementing_reverse_translation ><a href="#implementing_reverse_translation" class=header-anchor >Implementing reverse translation</a></h1> <p>I quite like writing high-performance bioinformatics code. It&#39;s just so satisfying when you get the abstractions <em>just right</em> to express a biological idea elegantly in code.</p> <p>Recently, I came across a biological problem which is particularly nice to implement. It&#39;s nice because it&#39;s small and simple, contains some real biology, and shows how choosing good abstractions can lead to generic and yet efficient code.</p> <p>This post is a kind of live &quot;coding session&quot;. Or, not live, just a coding session. There is no grand point to be made - just a walkthrough of a satisfying implementation.</p> <p>If you want to follow along, you can find the code &#40;with slight modifications&#41; <a href="https://github.com/jakobnissen/play/blob/master/revtrans.jl">here &#40;click&#41;</a>.</p> <h2 id=background ><a href="#background" class=header-anchor >Background</a></h2> <p>The basic flow of genetic information is identical for all living cells on earth<sup id="fnref:1"><a href="#fndef:1" class=fnref >[1]</a></sup> : The genome is stored as DNA, a chemically stable molecule fit for long-term storage. When in use, temporary copies of relevant parts of the DNA genome are made, copies made from RNA; a more chemically active and useful molecule than DNA, but therefore shorter-lived. RNA can be thought of as a string composed of 4 molecules: A, C, G, and U, called <em>bases</em>. The information in RNA comes entirely from the order of its bases<sup id="fnref:2"><a href="#fndef:2" class=fnref >[2]</a></sup>. This way, RNA is digital information stored in base 4. Through an elaborate mechanism called <em>translation</em>, the information in the RNA copies are used by the cell to manufacture proteins.</p> <p>During translation, the RNA string is fed like a tape into a nanomachine called a <em>ribosome</em>. The ribosome reads three RNA bases at a time, then moves the RNA string three bases and reads the next three. Each RNA 3-gram, called a <em>codon</em>, is mapped to an amino acid by the ribosome. For example, the RNA molecule <code>UCCGAUAAU</code> is read and mapped like this:</p> <pre><code class="plaintext hljs">UCC -&gt; Serine (S)
+GAU -&gt; Aspartic acid (D)
+AAU -&gt; Asparagine (N)</code></pre> <p>, and thus translated to the amino acid chain <code>SDN</code>. Amino acid chains are called proteins, and besides being a major factor in reaping sick gainz in the gym, proteins are a major component of life forms on Earth. The &quot;mapping function&quot; from codons to the 20 different amino acids<sup id="fnref:3"><a href="#fndef:3" class=fnref >[3]</a></sup> is called <em>the genetic code</em>. You might have realized that there being 20 amino acids has an implication for the genetic code: Since there are <span class=katex ><span class=katex-mathml ><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>4</mn><mn>3</mn></msup><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">4^3 = 64</annotation></semantics></math></span><span class=katex-html  aria-hidden=true ><span class=base ><span class=strut  style="height:0.8141079999999999em;vertical-align:0em;"></span><span class=mord ><span class=mord >4</span><span class=msupsub ><span class=vlist-t ><span class=vlist-r ><span class=vlist  style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class=pstrut  style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span></span></span></span></span><span class=mspace  style="margin-right:0.2777777777777778em;"></span><span class=mrel >=</span><span class=mspace  style="margin-right:0.2777777777777778em;"></span></span><span class=base ><span class=strut  style="height:0.64444em;vertical-align:0em;"></span><span class=mord >64</span></span></span></span> different codons and only 20 amino acids, some amino acids must be coded for by multiple codons, so-called <em>degeneracy</em>. Part of the reason for degeneracy is <a href="https://en.wikipedia.org/wiki/Wobble_base_pair">wobble base pairs</a>: The physical mechanism used by the ribosome to match codons with amino acids is not precise due to the physical construction of the ribosome, causing some codons to match with the &quot;wrong&quot;, or rather, imperfectly specified amino acid.</p> <p>As a side note, I find it interesting to which extent the genetic code is arbitrary, and to which extent it is constrained by physical processes like wobbling. While I&#39;m not too much into the literature on this topic, the consensus seem to be that while there are some constraints, the huge amount of possible genetic codes would make it exceedingly unlikely that the same, or almost same, genetic code evolved twice independently. And yet, all life forms use the same genetic code, from anteaters to subterranean bacteria. This is pretty good evidence that all life on earth descends from a single common ancestor.</p> <p>Well, the same code is used by <em>almost</em> all organisms. As always in biology, there are <a href="https://en.wikipedia.org/wiki/List_of_genetic_codes">exceptions</a>, but these are truly exceptional, and the deviations from the standard genetic code are minor.</p> <p>Evolutionarily, it makes sense that the genetic code is nearly universal. Any mutation that changes the genetic code itself is equivalent to changing every single gene in the genome at once - surely such a mutation must be immediately lethal. Hence, once a genetic code appeared in some proto-organism, and its entire genome came to use it, it became fixed and unable to evolve. It&#39;s likely that the standard genetic code has been unchanged for billions of years, since the most advanced life form on Earth was far simpler than a current bacterium.</p> <h2 id=reverse_translation ><a href="#reverse_translation" class=header-anchor >Reverse translation</a></h2> <p>Anyway, back to computers. So, nature <em>translates</em> RNA to protein. We don&#39;t know of any natural process that does the opposite - translates amino acids to RNA, and it probably doesn&#39;t exist - but it can sometimes be useful to do this kind of reverse translation <em>in silico</em> when analyzing biological sequences. How do we implement it in software?</p> <p>The first observation is that an amino acid can&#39;t be reverse translated to a single codon. Because the genetic code is degenerate, an amino acid can possibly map onto multiple codons. For example, the amino acid glutamine &#40;Q&#41; can map to <code>CAA</code> or <code>CAG</code>. Hence, we must map amino acids to <em>sets</em> of codons instead of single codons.</p> <p>The second observation is that there are multiple different genetic codes. Instead of writing multiple implementations of reverse translation, one for each genetic code, we should be able to make some kind of object representing a genetic code and refer to that when doing reverse translation.</p> <p>For our implementation, we should lean on the package <code>BioSequences.jl</code>. It already implements types for RNA, amino acids, biological sequences, and even genetic codes and translation. It doesn&#39;t have any reverse translation functionality, though - that&#39;s what we&#39;re here for&#33;</p> <h3 id=implementing_the_codonset ><a href="#implementing_the_codonset" class=header-anchor >Implementing the CodonSet</a></h3> <p>Reverse translating an amino acid should yield a <code>CodonSet</code>. Since there are <span class=katex ><span class=katex-mathml ><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>4</mn><mn>3</mn></msup><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">4^3 = 64</annotation></semantics></math></span><span class=katex-html  aria-hidden=true ><span class=base ><span class=strut  style="height:0.8141079999999999em;vertical-align:0em;"></span><span class=mord ><span class=mord >4</span><span class=msupsub ><span class=vlist-t ><span class=vlist-r ><span class=vlist  style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class=pstrut  style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span></span></span></span></span><span class=mspace  style="margin-right:0.2777777777777778em;"></span><span class=mrel >=</span><span class=mspace  style="margin-right:0.2777777777777778em;"></span></span><span class=base ><span class=strut  style="height:0.64444em;vertical-align:0em;"></span><span class=mord >64</span></span></span></span> codons, we can encode a <code>CodonSet</code> in a 64-bit integer, with each bit from least to most significant representing a codon in alphabetical order from <code>AAA</code> to <code>UUU</code>. Conveniently, the internal representation <code>BioSequences.jl</code> uses for fixed-length nucleic acid sequences like codons are 64-bit integers: The codons <code>AAA</code> to <code>UUU</code> are represented by the numbers 0 to 63. This is great news&#33; CPUs are optimized for operating on bits of integers, so we should be able to use this fact to create <em>very</em> efficient code for our <code>CodonSets</code>.</p> <div class=juliacode ><pre><code class="plaintext hljs">using BioSequences
 
-struct CodonSet &lt;: AbstractSet&#123;RNACodon&#125;
+struct CodonSet &lt;: AbstractSet{RNACodon}
     x::UInt64
 end
-CodonSet&#40;&#41; &#61; CodonSet&#40;UInt64&#40;0&#41;&#41;</code></pre></div> <p>We subtyped <code>AbstractSet</code>, so we need to implement quite a few methods for it to work properly and feel like a real set type to the user. First two basic functions: The length of a <code>CodonSet</code> is the number of set bits in the integer. This can be counted using a single <code>popcntq</code> CPU instruction, available with the Base function <code>count_ones</code>:</p> <div class=juliacode ><pre><code class=language-plaintext >Base.length&#40;x::CodonSet&#41; &#61; count_ones&#40;x.x&#41;</code></pre></div>
+CodonSet() = CodonSet(UInt64(0))</code></pre></div> <p>We subtyped <code>AbstractSet</code>, so we need to implement quite a few methods for it to work properly and feel like a real set type to the user. First two basic functions: The length of a <code>CodonSet</code> is the number of set bits in the integer. This can be counted using a single <code>popcntq</code> CPU instruction, available with the Base function <code>count_ones</code>:</p> <div class=juliacode ><pre><code class="plaintext hljs">Base.length(x::CodonSet) = count_ones(x.x)</code></pre></div>
 <p>We would also like to add elements to our set. Since we&#39;re creating an immutable set type, let&#39;s implement <code>push</code> instead of <code>Base.push&#33;</code>. To add e.g. <code>UGG</code>, we need to convert <code>UGG</code> to an integer <code>n</code>. Then, we set the n&#39;th bit. We exploit the fact that the code <code>x &lt;&lt; &#40;n &amp; 63&#41;</code> compiles to a single <code>shlxq</code> instruction. We do the inverse operation for <code>in</code>, doing <code>x &gt;&gt;&gt; &#40;n &amp; 63&#41;</code>, and taking advantage of the built-in <code>isodd</code> function.</p>
-<div class=juliacode ><pre><code class=language-plaintext >function push&#40;s::CodonSet, x::RNACodon&#41;
-    CodonSet&#40;s.x | &#40;UInt64&#40;1&#41; &lt;&lt; &#40;reinterpret&#40;UInt64, x&#41; &amp; 63&#41;&#41;&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">function push(s::CodonSet, x::RNACodon)
+    CodonSet(s.x | (UInt64(1) &lt;&lt; (reinterpret(UInt64, x) &amp; 63)))
 end
 
-Base.in&#40;c::RNACodon, s::CodonSet&#41; &#61; isodd&#40;s.x &gt;&gt;&gt; &#40;reinterpret&#40;UInt64, c&#41; &amp; 63&#41;&#41;</code></pre></div>
+Base.in(c::RNACodon, s::CodonSet) = isodd(s.x &gt;&gt;&gt; (reinterpret(UInt64, c) &amp; 63))</code></pre></div>
 <p>We can easily see the code it compiles to:</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; x &#61; CodonSet&#40;55&#41;;
+<div class=juliacode ><pre><code class="plaintext hljs">julia&gt; x = CodonSet(55);
 
-julia&gt; @code_native debuginfo&#61;:none push&#40;x, mer&quot;AAA&quot;r&#41;
+julia&gt; @code_native debuginfo=:none push(x, mer&quot;AAA&quot;r)
         .text
-        movq    &#40;&#37;rdi&#41;, &#37;rax
-        btsq    &#37;rsi, &#37;rax
+        movq    (%rdi), %rax
+        btsq    %rsi, %rax
         retq
-        nopl    &#40;&#37;rax,&#37;rax&#41;
+        nopl    (%rax,%rax)
 
-julia&gt; @code_native debuginfo&#61;:none mer&quot;AAA&quot;r in x
+julia&gt; @code_native debuginfo=:none mer&quot;AAA&quot;r in x
         .text
-        movq    &#40;&#37;rsi&#41;, &#37;rax
-        btq     &#37;rdi, &#37;rax
-        setb    &#37;al
+        movq    (%rsi), %rax
+        btq     %rdi, %rax
+        setb    %al
         retq
-        nopl    &#40;&#37;rax,&#37;rax&#41;</code></pre></div>
+        nopl    (%rax,%rax)</code></pre></div>
 <p>Incredibly, LLVM optimizes <code>push</code> to a single <code>btsq</code> instruction, and <code>in</code> to <code>btq</code> &#43; <code>setb</code>&#33; This makes sense when you think about it: <code>btsq</code> is literally &quot;bit-set quad&quot; - it sets the bit directly, just like <code>btq</code> is &quot;bit-test&quot; for membership testing.</p>
 <p>We&#39;ll also need to iterate over the elements of the set. Unfortunately, implementing iterators in Julia is a little tricky. One need to create a function that takes <code>iter, state</code> and returns <code>item, new_state</code> if the iterator is not done and <code>nothing</code> otherwise. For iteration N, we need to return the position of the N&#39;th least significant set bit in the integer.</p>
 <p>For this we can use the <code>tzcntq</code> CPU instruction, which is handily available in Julia through the <code>trailing_zeros</code> function, combined with the old C trick of <code>x &amp; &#40;x-1&#41;</code> to clear the least significant bit:</p>
-<div class=juliacode ><pre><code class=language-plaintext >function Base.iterate&#40;x::CodonSet, s::UInt64&#61;x.x&#41;
-    iszero&#40;s&#41; ? nothing : &#40;reinterpret&#40;RNACodon, trailing_zeros&#40;s&#41;&#41;, s &amp; &#40;s-1&#41;&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">function Base.iterate(x::CodonSet, s::UInt64=x.x)
+    iszero(s) ? nothing : (reinterpret(RNACodon, trailing_zeros(s)), s &amp; (s-1))
 end</code></pre></div>
 <p>These primitives allows us to implement its higher-level behaviour. For example, we of course want to be able to construct a <code>CodonSet</code> from any iterable of <code>RNACodon</code>, no matter its type. This can be expressed concisely using the second-order function <code>foldl</code>:</p>
-<div class=juliacode ><pre><code class=language-plaintext >CodonSet&#40;itr&#41; &#61; foldl&#40;push, itr, init&#61;CodonSet&#40;&#41;&#41;</code></pre></div>
+<div class=juliacode ><pre><code class="plaintext hljs">CodonSet(itr) = foldl(push, itr, init=CodonSet())</code></pre></div>
 <p><code>foldl</code> reduces over an iterable, mapping a function, here <code>push</code> to each element and an accumulator. In other words, this code is equivalent to:</p>
-<div class=juliacode ><pre><code class=language-plaintext >function CodonSet&#40;itr&#41;
-    y &#61; CodonSet&#40;&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">function CodonSet(itr)
+    y = CodonSet()
     for i in itr
-        y &#61; push&#40;y, i&#41;
+        y = push(y, i)
     end
     y
 end</code></pre></div>
 <h3 id=implementing_set_operations ><a href="#implementing_set_operations" class=header-anchor >Implementing set operations</a></h3>
 <p>We can&#39;t have a codon set without implementing basic set operations. Let&#39;s begin with <code>union</code>, also known in Julia as <code>∪</code>. This function should take any number of <code>CodonSet</code> and construct a new set with elements from any of the inputs. In the internal representation, we need to take the union of the set bits in the integer. This is just the bitwise or&#33;</p>
-<div class=juliacode ><pre><code class=language-plaintext >function Base.union&#40;a::CodonSet, b::Vararg&#123;CodonSet&#125;&#41;
-    mapreduce&#40;i -&gt; i.x, |, b, init&#61;a.x&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">function Base.union(a::CodonSet, b::Vararg{CodonSet})
+    mapreduce(i -&gt; i.x, |, b, init=a.x)
 end</code></pre></div>
 <p><code>intersect</code> is analogous to <code>union</code>, but the resulting set must only contain elements which are present in all of the inputs. But... that&#39;s just like <code>union</code>, but with bitwise and &#40;function <code>&amp;</code>&#41; instead of <code>|</code>. And likewise for the n-ary symmetric difference, which is bitwise xor &#40;<code>⊻</code>&#41;.</p>
 <p>We could write this same implementation three times - or, since this in Julia, we can use use metaprogramming and write a loop which creates the code that defines all these functions in one go:</p>
-<div class=juliacode ><pre><code class=language-plaintext >for &#40;name, f&#41; in &#91;&#40;:union, |&#41;, &#40;:intersect, &amp;&#41;, &#40;:symdiff, ⊻&#41;&#93;
-    @eval function Base.&#36;&#40;name&#41;&#40;a::CodonSet, b::Vararg&#123;CodonSet&#125;&#41; 
-        CodonSet&#40;mapreduce&#40;i -&gt; i.x, &#36;f, b, init&#61;a.x&#41;&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">for (name, f) in [(:union, |), (:intersect, &amp;), (:symdiff, ⊻)]
+    @eval function Base.$(name)(a::CodonSet, b::Vararg{CodonSet}) 
+        CodonSet(mapreduce(i -&gt; i.x, $f, b, init=a.x))
     end
 end</code></pre></div>
 <p>The n-ary set complement, <span class=katex ><span class=katex-mathml ><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mtext>∖</mtext><mo stretchy=false >(</mo><mi>B</mi><mo>∪</mo><mi mathvariant=normal >.</mi><mi mathvariant=normal >.</mi><mi mathvariant=normal >.</mi><mo stretchy=false >)</mo></mrow><annotation encoding="application/x-tex">A ∖ (B \cup ...)</annotation></semantics></math></span><span class=katex-html  aria-hidden=true ><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">A</span><span class=mord >∖</span><span class=mopen >(</span><span class="mord mathnormal" style="margin-right:0.05017em;">B</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span><span class=mbin >∪</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span></span><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class=mord >...</span><span class=mclose >)</span></span></span></span>, or <code>setdiff</code> in Julia, can be implemented using the just-defined <code>union</code>, and then a bitwise &quot;and&quot; and &quot;not&quot; instruction: Literally &quot;everything in A and not in B&quot;:</p>
-<div class=juliacode ><pre><code class=language-plaintext >Base.setdiff&#40;a::CodonSet, b::Vararg&#123;CodonSet&#125;&#41; &#61; CodonSet&#40;a.x &amp; ~&#40;union&#40;b...&#41;.x&#41;&#41;</code></pre></div>
+<div class=juliacode ><pre><code class="plaintext hljs">Base.setdiff(a::CodonSet, b::Vararg{CodonSet}) = CodonSet(a.x &amp; ~(union(b...).x))</code></pre></div>
 <p>How does all this indirection with higher order functions like <code>mapfoldl</code> affect efficiency? Let&#39;s check it by defining a more complicated function which uses <code>setdiff</code>, <code>union</code> &#40;<code>∪</code>&#41; and <code>symdiff</code> on five sets all in one:</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; f&#40;a, b, c, d, e&#41; &#61; setdiff&#40;a, b ∪ c, intersect&#40;e, a, b&#41;&#41;;
+<div class=juliacode ><pre><code class="plaintext hljs">julia&gt; f(a, b, c, d, e) = setdiff(a, b ∪ c, intersect(e, a, b));
 
-julia&gt; @code_native debuginfo&#61;:none g&#40;s, s, s, s, s&#41;
+julia&gt; @code_native debuginfo=:none g(s, s, s, s, s)
         .text
-        movq    &#40;&#37;rdx&#41;, &#37;rax
-        orq     &#40;&#37;rsi&#41;, &#37;rax
-        andnq   &#40;&#37;rdi&#41;, &#37;rax, &#37;rax
+        movq    (%rdx), %rax
+        orq     (%rsi), %rax
+        andnq   (%rdi), %rax, %rax
         retq
-        nopl    &#40;&#37;rax&#41;</code></pre></div>
+        nopl    (%rax)</code></pre></div>
 <p>The backend compiler, LLVM, inlines pretty aggressively, so we end with just two CPU instructions. It correctly realizes that <span class=katex ><span class=katex-mathml ><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mtext>∖</mtext><mo stretchy=false >(</mo><mo stretchy=false >(</mo><mi>b</mi><mo>∪</mo><mi>c</mi><mo stretchy=false >)</mo><mo>∪</mo><mo stretchy=false >(</mo><mi>e</mi><mo>∩</mo><mi>a</mi><mo>∩</mo><mi>b</mi><mo stretchy=false >)</mo><mo stretchy=false >)</mo><mo>=</mo><mi>A</mi><mtext>∖</mtext><mo stretchy=false >(</mo><mi>b</mi><mo>∪</mo><mi>c</mi><mo stretchy=false >)</mo></mrow><annotation encoding="application/x-tex">A ∖ ((b \cup c) \cup (e \cap a \cap b)) = A ∖ (b \cup c)</annotation></semantics></math></span><span class=katex-html  aria-hidden=true ><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">A</span><span class=mord >∖</span><span class=mopen >((</span><span class="mord mathnormal">b</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span><span class=mbin >∪</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span></span><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class=mclose >)</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span><span class=mbin >∪</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span></span><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class=mopen >(</span><span class="mord mathnormal">e</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span><span class=mbin >∩</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span></span><span class=base ><span class=strut  style="height:0.55556em;vertical-align:0em;"></span><span class="mord mathnormal">a</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span><span class=mbin >∩</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span></span><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">b</span><span class=mclose >))</span><span class=mspace  style="margin-right:0.2777777777777778em;"></span><span class=mrel >=</span><span class=mspace  style="margin-right:0.2777777777777778em;"></span></span><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">A</span><span class=mord >∖</span><span class=mopen >(</span><span class="mord mathnormal">b</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span><span class=mbin >∪</span><span class=mspace  style="margin-right:0.2222222222222222em;"></span></span><span class=base ><span class=strut  style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class=mclose >)</span></span></span></span>, and uses only one CPU instruction for each of these two set operations. Not bad&#33;</p>
 <p>A few more simple methods for our type:</p>
-<div class=juliacode ><pre><code class=language-plaintext >Base.isempty&#40;s::CodonSet&#41; &#61; iszero&#40;s.x&#41;
-Base.issubset&#40;a::CodonSet, b::CodonSet&#41; &#61; isempty&#40;setdiff&#40;a, b&#41;&#41;
-delete&#40;s::CodonSet, x::RNACodon&#41; &#61; setdiff&#40;s, CodonSet&#40;&#40;x,&#41;&#41;&#41;
-Base.filter&#40;f, s::CodonSet&#41; &#61; CodonSet&#40;Iterators.filter&#40;f, s&#41;&#41;</code></pre></div>
+<div class=juliacode ><pre><code class="plaintext hljs">Base.isempty(s::CodonSet) = iszero(s.x)
+Base.issubset(a::CodonSet, b::CodonSet) = isempty(setdiff(a, b))
+delete(s::CodonSet, x::RNACodon) = setdiff(s, CodonSet((x,)))
+Base.filter(f, s::CodonSet) = CodonSet(Iterators.filter(f, s))</code></pre></div>
 <h2 id=reversegeneticcode ><a href="#reversegeneticcode" class=header-anchor >ReverseGeneticCode</a></h2>
 <p>With a <code>CodonSet</code> type we can serve our users with good conscience, let&#39;s move to defining reverse translation itself. First though, we need to define the genetic code... didn&#39;t <code>BioSequences</code> already have that object?</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; dump&#40;BioSequences.GeneticCode&#41;
-BioSequences.GeneticCode &lt;: AbstractDict&#123;Mer&#123;RNAAlphabet&#123;2&#125;, 3&#125;, AminoAcid&#125;
+<div class=juliacode ><pre><code class="plaintext hljs">julia&gt; dump(BioSequences.GeneticCode)
+BioSequences.GeneticCode &lt;: AbstractDict{Mer{RNAAlphabet{2}, 3}, AminoAcid}
   name::String
-  tbl::Vector&#123;AminoAcid&#125;</code></pre></div>
+  tbl::Vector{AminoAcid}</code></pre></div>
 <p>It&#39;s a glorified lookup-table: Each input codon is reinterpreted as an integer and used to look up the corresponding amino acid in the vector. We <em>could</em> use the existing <code>GeneticCode</code> object to do reverse translation, but for each amino acid, we would have to traverse the vector and find all the codons that code for that particular amino acid. Instead, let&#39;s make a new object:</p>
-<div class=juliacode ><pre><code class=language-plaintext >const N_AA &#61; length&#40;alphabet&#40;AminoAcid&#41;&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">const N_AA = length(alphabet(AminoAcid))
 
-struct ReverseGeneticCode &lt;: AbstractDict&#123;AminoAcid, CodonSet&#125;
+struct ReverseGeneticCode &lt;: AbstractDict{AminoAcid, CodonSet}
     name::String
-    sets::NTuple&#123;N_AA, CodonSet&#125;
+    sets::NTuple{N_AA, CodonSet}
 end</code></pre></div>
 <p>Since the &quot;vector&quot;&#39;s length is known at compile time, and it&#39;s manageably small, it should be an <code>NTuple</code>. The final translation interface we want is:</p>
-<div class=juliacode ><pre><code class=language-plaintext >Base.getindex&#40;c::ReverseGeneticCode, a::AminoAcid&#41; &#61; c.sets&#91;reinterpret&#40;UInt8, a&#41; &#43; 1&#93;
+<div class=juliacode ><pre><code class="plaintext hljs">Base.getindex(c::ReverseGeneticCode, a::AminoAcid) = c.sets[reinterpret(UInt8, a) + 1]
 
-function reverse_translate&#33;&#40;
-    v::Vector&#123;CodonSet&#125;,
+function reverse_translate!(
+    v::Vector{CodonSet},
     seq::AminoAcidSeq,
-    code&#61;rev_standard_genetic_code
-&#41;
-    resize&#33;&#40;v, length&#40;seq&#41;&#41;
-    @inbounds for i in eachindex&#40;v&#41;
-        v&#91;i&#93; &#61; code&#91;seq&#91;i&#93;&#93;
+    code=rev_standard_genetic_code
+)
+    resize!(v, length(seq))
+    @inbounds for i in eachindex(v)
+        v[i] = code[seq[i]]
     end
     v
 end
 
-function reverse_translate&#40;seq::AminoAcidSeq, code&#61;rev_standard_genetic_code&#41;
-    reverse_translate&#33;&#40;Vector&#123;CodonSet&#125;&#40;undef, length&#40;seq&#41;&#41;, seq, code&#41;
+function reverse_translate(seq::AminoAcidSeq, code=rev_standard_genetic_code)
+    reverse_translate!(Vector{CodonSet}(undef, length(seq)), seq, code)
 end</code></pre></div>
 <p>So we just need a way to define the reverse genetic codes. We could pour over <a href="https://en.wikipedia.org/wiki/List_of_genetic_codes">a curated list of genetic codes</a>, but why not simply generate the reverse codes from the codes already in <code>BioSequences</code>? For each &quot;forward&quot; code, we traverse its internal table to get <code>&#40;AminoAcid, RNACodon&#41;</code> pairs, and use it to build a reverse code:</p>
-<div class=juliacode ><pre><code class=language-plaintext >function ReverseGeneticCode&#40;x::BioSequences.GeneticCode&#41;
-    ind&#40;aa::AminoAcid&#41; &#61; reinterpret&#40;UInt8, aa&#41; &#43; 1
+<div class=juliacode ><pre><code class="plaintext hljs">function ReverseGeneticCode(x::BioSequences.GeneticCode)
+    ind(aa::AminoAcid) = reinterpret(UInt8, aa) + 1
 
-    sets &#61; fill&#40;CodonSet&#40;&#41;, N_AA&#41;
-    for i in Int64&#40;0&#41;:Int64&#40;63&#41;
-        aa &#61; x.tbl&#91;i &#43; 1&#93;
-        sets&#91;ind&#40;aa&#41;&#93; &#61; push&#40;sets&#91;ind&#40;aa&#41;&#93;, reinterpret&#40;RNACodon, i&#41;&#41;
+    sets = fill(CodonSet(), N_AA)
+    for i in Int64(0):Int64(63)
+        aa = x.tbl[i + 1]
+        sets[ind(aa)] = push(sets[ind(aa)], reinterpret(RNACodon, i))
     end
 
-    ReverseGeneticCode&#40;x.name, Tuple&#40;sets&#41;&#41;
+    ReverseGeneticCode(x.name, Tuple(sets))
 end</code></pre></div>
 <p>Let&#39;s check it out:</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; reverse_translate&#40;
+<div class=juliacode ><pre><code class="plaintext hljs">julia&gt; reverse_translate(
     aa&quot;SDN&quot;,
-    ReverseGeneticCode&#40;BioSequences.standard_genetic_code&#41;
-&#41;
-3-element Vector&#123;CodonSet&#125;:
- CodonSet&#40;0x00f0000000000a00&#41;
- CodonSet&#40;0x0000000a00000000&#41;
- CodonSet&#40;0x000000000000000a&#41;</code></pre></div>
+    ReverseGeneticCode(BioSequences.standard_genetic_code)
+)
+3-element Vector{CodonSet}:
+ CodonSet(0x00f0000000000a00)
+ CodonSet(0x0000000a00000000)
+ CodonSet(0x000000000000000a)</code></pre></div>
 <p>Neat.</p>
 <p>Now to make <em>all</em> the reverse genetic codes in one loop: We can make a loop which inspects all variables in <code>BioSequences</code>, and, if they are <code>GeneticCode</code> objects, define a <code>const</code> equivalent reverse code with the same name with <code>rev_</code> prepended:</p>
-<div class=juliacode ><pre><code class=language-plaintext >for symbol in names&#40;BioSequences, all&#61;true&#41;
-    Base.isdeprecated&#40;BioSequences, symbol&#41; &amp;&amp; continue
-    isdefined&#40;BioSequences, symbol&#41; || continue
-    thing &#61; getproperty&#40;BioSequences, symbol&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">for symbol in names(BioSequences, all=true)
+    Base.isdeprecated(BioSequences, symbol) &amp;&amp; continue
+    isdefined(BioSequences, symbol) || continue
+    thing = getproperty(BioSequences, symbol)
     thing isa BioSequences.GeneticCode || continue
-    @eval const &#36;&#40;Symbol&#40;:rev_, symbol&#41;&#41; &#61; ReverseGeneticCode&#40;&#36;thing&#41;
+    @eval const $(Symbol(:rev_, symbol)) = ReverseGeneticCode($thing)
 end</code></pre></div>
 <p>And... we&#39;re done&#33;</p>
 <blockquote>
 <p>Just one second&#33; <code>N_AA &#61;&#61; 28</code>. But you&#39;ve only dealt with the 20 amino acids of the genetic code so far&#33;</p>
 </blockquote>
 <p>Okay, okay. Let&#39;s see what the others are:</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; setdiff&#40;alphabet&#40;AminoAcid&#41;,
+<div class=juliacode ><pre><code class="plaintext hljs">julia&gt; setdiff(alphabet(AminoAcid),
                BioSequences.standard_genetic_code.tbl
-              &#41;
-7-element Vector&#123;AminoAcid&#125;:
+              )
+7-element Vector{AminoAcid}:
  AA_O
  AA_U
  AA_B
@@ -155,35 +155,35 @@ end</code></pre></div>
 <p><code>AA_O</code> and <code>AA_U</code> are pyrrolysine and selenocysteine: Special amino acids that are encoded by the cell dynamically overloading the genetic code in a trick called <em>translational recoding</em>. For example, pyrrolysine is encoded by overloading the <code>UAG</code> codon, which normally encodes the &quot;amber&quot; STOP codon - a signal that the ribosome should abort translation. Selenocysteine is encoded by overloading <code>UGA</code>.</p>
 <p>The mechanisms for when exactly translational recoding happens are complex, but fortunately that doesn&#39;t matter in this particular case. Since <em>every</em> pyrrolysine come from <code>UAG</code>, <code>UAG</code> is the only possible reverse translation. Note that this also means our reverse genetic codes are not exactly inverse of the corresponding forward genetic code, since <code>UAG</code> in the forward direction is assumed to always code for STOP due to the exceptional nature of translational recoding.</p>
 <p>We can add these two special cases to the <code>ReverseGeneticCode</code> constructor:</p>
-<div class=juliacode ><pre><code class=language-plaintext ># In constructor
-    sets&#91;ind&#40;AA_U&#41;&#93; &#61; CodonSet&#40;&#40;mer&quot;UGA&quot;r,&#41;&#41;
-    sets&#91;ind&#40;AA_O&#41;&#93; &#61; CodonSet&#40;&#40;mer&quot;UAG&quot;r,&#41;&#41;</code></pre></div>
+<div class=juliacode ><pre><code class="plaintext hljs"># In constructor
+    sets[ind(AA_U)] = CodonSet((mer&quot;UGA&quot;r,))
+    sets[ind(AA_O)] = CodonSet((mer&quot;UAG&quot;r,))</code></pre></div>
 <p>The amino acids <code>AA_B</code>, <code>AA_J</code>, <code>AA_Z</code> and <code>AA_X</code> each signify <em>ambiguous</em> amino acids: <code>J</code> means &quot;<code>L</code> or <code>I</code>&quot;. These two amino acids have near-identical chemical structure, and identical molecular mass which can make them hard to tell apart in experiments. Hence, a symbol for &quot;it could be <code>I</code> or <code>L</code>, we don&#39;t know&quot; is useful. <code>Z</code> and <code>B</code> follows the same logic for <code>D/N</code> and <code>E/Q</code>, respectively. Finally, <code>X</code> means &quot;any amino acid&quot;.</p>
 <p>So, we add special cases for those in the constructor - <code>AA_B</code> clearly just reverse translates to the union of whatever <code>AA_D</code> and <code>AA_N</code> reverse translates to, and <code>AA_X</code> reverse translates to everything:</p>
-<div class=juliacode ><pre><code class=language-plaintext ># In constructor
+<div class=juliacode ><pre><code class="plaintext hljs"># In constructor
     # Ambiguous amino acids
-    for &#40;n, &#40;a, b&#41;&#41; in &#91;&#40;AA_B, &#40;AA_D, AA_N&#41;&#41;, &#40;AA_J, &#40;AA_I, AA_L&#41;&#41;, &#40;AA_Z, &#40;AA_E, AA_Q&#41;&#41;&#93;
-        sets&#91;ind&#40;n&#41;&#93; &#61; sets&#91;ind&#40;a&#41;&#93; ∪ sets&#91;ind&#40;b&#41;&#93;
+    for (n, (a, b)) in [(AA_B, (AA_D, AA_N)), (AA_J, (AA_I, AA_L)), (AA_Z, (AA_E, AA_Q))]
+        sets[ind(n)] = sets[ind(a)] ∪ sets[ind(b)]
     end
 
     # AA_X codes for all amino acids
-    sets&#91;ind&#40;AA_X&#41;&#93; &#61; CodonSet&#40;typemax&#40;UInt64&#41;&#41;</code></pre></div>
+    sets[ind(AA_X)] = CodonSet(typemax(UInt64))</code></pre></div>
 <p>For the final two missing amino acids, <code>AA_Term</code> is the STOP signal - these are already part of the normal genetic code and don&#39;t need special handling. Finally, <code>AA_Gap</code> means the <em>absence</em> of an amino acid. It&#39;s questionable whether an absence should <em>really</em> be an amino acid object in <code>BioSequences</code>, in cases where one might find either something or nothing, it&#39;s usually better to store it as <code>Union&#123;T, Nothing&#125;</code>... but in this case, there are real use cases for encoding &quot;no amino acid&quot; as an <code>AminoAcid</code>. However, &quot;no amino acid&quot; certainly can&#39;t be reverse-translated, so we should special case it to error. To do this, we need to modify an earlier function:</p>
-<div class=juliacode ><pre><code class=language-plaintext >function Base.getindex&#40;s::ReverseGeneticCode, a::AminoAcid&#41;
-    if reinterpret&#40;UInt8, a&#41; &gt; &#40;N_AA - 2&#41; # cannot translate gap or invalid acid
-        error&#40;&quot;Cannot reverse translate element: &quot;, a&#41;
+<div class=juliacode ><pre><code class="plaintext hljs">function Base.getindex(s::ReverseGeneticCode, a::AminoAcid)
+    if reinterpret(UInt8, a) &gt; (N_AA - 2) # cannot translate gap or invalid acid
+        error(&quot;Cannot reverse translate element: &quot;, a)
     end
-    @inbounds s.sets&#91;reinterpret&#40;UInt8, a&#41; &#43; 1&#93;
+    @inbounds s.sets[reinterpret(UInt8, a) + 1]
 end</code></pre></div>
 <p>As a last treat, let&#39;s benchmark our reverse translation function:</p>
-<div class=juliacode ><pre><code class=language-plaintext >julia&gt; using BenchmarkTools
+<div class=juliacode ><pre><code class="plaintext hljs">julia&gt; using BenchmarkTools
 
-julia&gt; aa &#61; randaaseq&#40;10_000&#41;; # random AA seq
+julia&gt; aa = randaaseq(10_000); # random AA seq
 
-julia&gt; v &#61; Vector&#123;CodonSet&#125;&#40;undef, length&#40;aa&#41;&#41;;
+julia&gt; v = Vector{CodonSet}(undef, length(aa));
 
-julia&gt; @btime reverse_translate&#33;&#40;v, aa&#41;;
-  7.256 μs &#40;0 allocations: 0 bytes&#41;</code></pre></div>
+julia&gt; @btime reverse_translate!(v, aa);
+  7.256 μs (0 allocations: 0 bytes)</code></pre></div>
 <p>726 picoseconds per amino acid&#33; That&#39;s probably as fast as it&#39;s possible to go while still checking for valid data, unless one writes a carefully hand-vectorized implementation.</p>
 <p><table class=fndef  id="fndef:1">
     <tr>
@@ -206,16 +206,7 @@ julia&gt; @btime reverse_translate&#33;&#40;v, aa&#41;;
 </p>
 <div class=page-foot >
   <div class=copyright >
-    Jakob Nybo Nissen. Last modified: June 09, 2022. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
+    Jakob Nybo Nissen. Last modified: August 28, 2022. Website built with <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and the <a href="https://julialang.org">Julia programming language</a>.
   </div>
 </div>
 </div>
-    
-        
-
-
-
-    
-    
-        <script src="/libs/highlight/highlight.pack.js"></script>
-<script>hljs.initHighlightingOnLoad();hljs.configure({tabReplace: '    '});</script>
