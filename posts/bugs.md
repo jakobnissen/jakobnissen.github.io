@@ -4,14 +4,15 @@
 # Why is Julia so buggy and what can we do about it?
 Julia and its ecosystem has a _lot_ of bugs.
 Some months ago, long-time Julia user Yuri Vishnevsky wrote a blog post on this, entitled [Why I no longer recommend Julia](https://yuri.is/not-julia/), which made the rounds.
-It caused hefty discussion in the Julia community, and four months later, it's still brought up on Hacker News as soon as there is a post about Julia.
+It caused hefty discussion in the Julia community, and presumably made a lot of outsiders cautious about trying out Julia for their projects.
 
-Yuri's blog post struck a nerve with me because I have had a similar experience in my ~three years of using Julia daily, and have been having thoughts along the same lines, but the thoughts hadn't materialized until Yuri put words on it.
+Yuri's blog post struck a nerve with me because I have had a similar experience in my ~three years of using Julia daily. I've been having thoughts along the same lines, but hadn't been able to materialise them until Yuri put words it into words.
 This blog post is the result of a few of months of mulling it over.
 
-I will not waste any time arguing that Julia is buggy - Yuri already put it so well, so just read his blog post.
+I will not waste any time presenting evidence that Julia actually is buggy - Yuri already put it so well, so just read his blog post.
 
-Instead, this post will first cover the many interacting reasons _why_ Julia is a buggy language - I believe these experiences are interesting to anyone who cares about programming languages. I will argue that the causes of the problems are threefold:
+First, let me clear up a point of confusion. In response to Yuri's original post, lots of effort was spent arguing that Yuri didn't expose problems, in Julia the _language_, but rather packages in the Julia _ecosystem_.
+It's a pointless distinction: _Both_ the language and the ecosystem is full of bugs, for the same underlying reasons. This blog post is about what I belive these underlying reasons for unreliable code are. They might be of interest to anyone who cares about programming languages in general. I argue that the causes of the problems are threefold:
 * The fundamental design of Julia makes correctness hard
 * The culture among Julia users puts little emphasis on correctness
 * There is a lack of tooling to ensure correct code
@@ -19,27 +20,48 @@ Instead, this post will first cover the many interacting reasons _why_ Julia is 
 The two latter points contain several superficial issues that are quite fixable, so the last part will concern itself with what can be done, both as an individual Julia user, and as a developer of Julia, to make Julia a more solid language going forward.
 
 ## The language design makes correctness hard
-### Dynamic language
-Similar to Python
+### Julia is a dynamic language
+This is a classic point when programmers discuss languages: Code written in status languages tend to have fewer defect, because an ahead-of-time compiler prevent type bugs, and can act as a strict linter. This is especially true for languages intensionally built to be bug-resistant, like Ada and Rust.
 
-Clear up: Language, I mean both the language itself, and the ecosystem
+Here, Julia is in the same boat as Python. There are generally no guarantees about anything (except syntax errors) before runtime. This means typos, reference to undefined variables and many other simple problems are simply not detected in Julia before they are hit at runtime. In my experience, these silly and utterly preventable bugs constitute a major fraction of all Julia bugs I encounter in the wild.
 
 ### No interfaces, no protocols
-    ```julia
-    function filter(f::Callable{T, Bool}, x::Iterable{T})::Iterable{T}
-        ...
-    end
-    ```
-      is eminently, extremely clear. It makes intension obvious for programmers,
-      and also makes much more behaviour checkable
+I also mentioned this issue in another blog post under the section ["The type system works poorly"](https://viralinstruction.com/posts/badjulia/#the_type_system_works_poorly). Essentially, when you write a function signature in Julia, you have two choices:
 
-### Language for hackers
-* Language emphasizes TIMDOWTDI, hacker-culture and cleverness.
-    - Examples? Should they even be here?
-    - Find Stefan's point about Perl
-    - Many ways to do X
+Either use only concrete types, in which case the function is not generic, and needlessly constrained. This is generally considered unidiomatic Julia.
+
+Your other option, unfortunately, is to throw all guarantees overboard, by using abstract types. In Julia, abstract types have no rules and no interfaces. In fact, they often don't have documentation or even a coherent idea of what they are. For example, I have still to figure out what the `IO` type _actually is_, despite it being used extensively througout idiomatic Julia code.
+
+It could be different. For example, Python has adopted [protocols](https://peps.python.org/pep-0544/), a kind of static ducktyping, such that any type that implements `__iter__` is of the type `Iterable`, and any type that implements `__call__` is of type `Callable`.
+
+Such "behaviour"-based types, as opposed to Julia's type that can almost be described as onthological, are extremely useful. For example, if I provide the following psudo-Julia code:
+
+```julia
+function filter(predicate::Callable{T, Bool}, itr::Iterable{T})::Iterable{T}
+    ...
+end
+```
+
+It is eminently clear what this code accepts and what it produces - both to the programmer, and to the compiler that can enforce these promises. Too bad the code doesn't actually work since there is no concept of a callable or an iterable in Julia. Instead, the code would have to look like this:
+
+```julia
+function filter(predicate, itr)
+    ...
+end
+```
+
+### Julia is a language for hackers
+In the ["what's great about Julia"](https://viralinstruction.com/posts/goodjulia/) post, I argue that Julia is fun to use, and include the following quote from language co-creater Stefan Karpinski:
+
+> [..] one thing that's kind of hard to put your finger on that I always loved about Perl is that it's just FUN to use. People have told me that Julia is fun in the same way that Perl is. I think this has something to do with the language letting you do subversive things that might be dangerous or questionable but which work and let you play with the computer in interesting ways.
+
+Unfortunately, this cuts both ways. Julia is indeed fun, but it also subtly encourage a culture where everything is a hack upon a hack, where [There Is More Than One Way To Do It](https://en.wikipedia.org/wiki/There%27s_more_than_one_way_to_do_it), and where "clever" code is celebrated.
+
+It's the same thing with Perl, really. It's all fun and games when you're writing it. But when you have to read it, modify it, maintain it or you depend on it working predicably, the fun suddenly fades away as you find yourself in an un-navigable quagmire.
 
 ### No clear separation of public and private
+
+
 * Unclear separation of public and private
     - No pub/priv keywords
     - Language mechanisms:
@@ -59,17 +81,18 @@ Clear up: Language, I mean both the language itself, and the ecosystem
     - Are the type params of a struct private?
 
 ## A culture of hacking, not of correctness
-### Made for academics, by academics, not programmers
+### Made for academics, by academics
 Patrick Kidger
 "Code quality is generally low in Julia packages. (Perhaps because there’s an above-average number of people from academia etc., without any formal training in software development?)
 Even in the major well-known well-respected Julia packages, I see obvious cases of unused local variables, dead code branches that can never be reached, etc.
 
-In Python these are things that a linter (or code review!) would catch. And the use of such linters is ubiquitous. (Moreover in something like Rust, the compiler would catch these errors as well.) Meanwhile Julia simply hasn’t reached the same level of professionalism. (I’m not taking shots at anyone in particular here.)
+In Python these are things that a linter (or code review!) would catch. And the use of such linters is ubiquitous. (Moreover in something like Rust, the compiler would catch these errors as well.) Meanwhile Julia simply hasn’t reached the same level of professionalism.
 "
 
 "The fundamental problem here is that most Julia packages are written by academics, not professional software developers.
 
-Academic code quality is famously poor, and the Julia ecosystem is no exception"
+Academic code quality is famously poor, and the Julia ecosystem is no exception
+"
 
 
 
