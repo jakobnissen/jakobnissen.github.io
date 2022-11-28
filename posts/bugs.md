@@ -59,53 +59,50 @@ Unfortunately, this cuts both ways. Julia is indeed fun, but it also subtly enco
 
 It's the same thing with Perl, really. It's all fun and games when you're writing it. But when you have to read it, modify it, maintain it or you depend on it working predicably, the fun suddenly fades away as you find yourself in an un-navigable quagmire.
 
+# WHY VS WHY NOT INCLUDE A FEATURE
+
 ### No clear separation of public and private
+If you want the ability to develop a body of code that is being depended on by someone else, the only solution is to separate your code into parts which you promise not to change, such that it can be relied on (the API, or the public code), and parts where you make no promises, such that you can change it (the internals, or the private code).
 
+In Julia, there is no way of marking which code is public and which is private. The (quite predictable) consequence is that users frequently end up relying on a piece of code believing it to be public, only for the maintainer to release incompatible changes in what they consider to be internal code.
 
-* Unclear separation of public and private
-    - No pub/priv keywords
-    - Language mechanisms:
-        - Documentation. But, discourages docs of internals, and it is way too
-          easy to accidentally use a nondocumented funciton
-        - Export. But, discouraged from `using MyPkg` in code anyway, so how are you
-          to know it's exported?
-          - Not even clear `using Foo` is bad, know from experience
-    - Is accessing fields private? Not even clear
-        https://discourse.julialang.org/t/accessing-type-internal-fields-in-package-interfaces/70263
-    - Makes to way too easy to accidentally rely on internal behaviour, and makes
-      it less clear to authors when they create breaking changes.
-    - Preferably some language level syntax to solve this,
-    - Alternatively, cultural:
-        - TKF: Internal module in package
-        - Field access is always private
-    - Are the type params of a struct private?
+Now to be clear - Julia doesn't _prevent_ you from writing in your documentation that this or that behaviour is public or private. How could it? Hence, some people dismiss this problem with "Read The Fine Manual".
+
+Let's be real here: People usually don't read the whole documentation. And when they do, they often either misunderstand it, or forget it after a few months. Writing your code such that it is unreliable unless your users reads, understands and follows documentation is only very slightly better than always making your code consistently unreliable.
+
+Julia _does_ provide the `export` keyword, which controls which names are brought into your namespace. This is often used to mark public names. Unfortunately, this is merely a suggestion not universally followed, not even by Base Julia itself. As the Julia documentation states:
+
+> It is common to export names which form part of the API (application programming interface). [ ... ]  However, since qualified names always make identifiers accessible, this is just an option for organizing APIs: unlike other languages, Julia has no facilities for truly hiding module internals.
+
+The mention of `export` brings me to a related problem: Nearly all Julia tutorials and examples explain that you can use a package MyPkg with the `using` keyword: `using MyPkg`. This will bring all exported names from MyPkg into scope.
+
+Quite unfortunately, this also means that if a new version of MyPkg exports a new name which clashes with an existing name, the name cannot be resolved, and your code will crash. In other words, with the idiomatic approach to importing modules, nonbreaking changes in your dependencies can break your code!
+
+Experienced Julians will counter by saying that you should never do `using MyPkg` in your code, only use selective imports by writing `using MyPkg: MyPkg, foo bar` so you control which names is brought into scope. Why, then, does essentially *every* teaching material and example use case show `using MyPkg`?
+
+Selective imports, of course, make it impossible to determine which names are exported from your dependencies. And remember, most packages use the export system to signal what code is public!
+
+It's also telling that [there is no consensus in the community whether struct fields are private or not](https://discourse.julialang.org/t/accessing-type-internal-fields-in-package-interfaces/70263). You'll find some people saying it's "bad form" to mess with struct fields of dependencies, but others who expose an API that forces you to read struct fields directly.
 
 ## A culture of hacking, not of correctness
 ### Made for academics, by academics
-Patrick Kidger
-"Code quality is generally low in Julia packages. (Perhaps because there’s an above-average number of people from academia etc., without any formal training in software development?)
-Even in the major well-known well-respected Julia packages, I see obvious cases of unused local variables, dead code branches that can never be reached, etc.
+Julia is first and foremost designed to cater to scientist and engineer programmers.
+As a scientist, I must say it does so beautifully!
+As a natural consequence... let me quote [Patrick Kidger](https://discourse.julialang.org/t/state-of-machine-learning-in-julia/74385/4):
 
-In Python these are things that a linter (or code review!) would catch. And the use of such linters is ubiquitous. (Moreover in something like Rust, the compiler would catch these errors as well.) Meanwhile Julia simply hasn’t reached the same level of professionalism.
-"
+>Code quality is generally low in Julia packages. (Perhaps because there’s an above-average number of people from academia etc., without any formal training in software development?)
+> Even in the major well-known well-respected Julia packages, I see obvious cases of unused local variables, dead code branches that can never be reached, etc.
+> In Python these are things that a linter (or code review!) would catch. And the use of such linters is ubiquitous. (Moreover in something like Rust, the compiler would catch these errors as well.) Meanwhile Julia simply hasn’t reached the same level of professionalism.
 
-"The fundamental problem here is that most Julia packages are written by academics, not professional software developers.
+In a [related blog post](https://kidger.site/thoughts/jax-vs-julia/), he writes:
 
-Academic code quality is famously poor, and the Julia ecosystem is no exception
-"
+> The fundamental problem here is that most Julia packages are written by academics, not professional software developers. Academic code quality is famously poor, and the Julia ecosystem is no exception
 
+I suppose there is some truth to that.
+For what it's worth, the code quality I see among scientific Julians is far better than that from scientist Pythonistas. This should not be surprising - the scientists who pick up a much less popular programming language are likely to be programming affectionados.
 
-
-* Wrong people: Academics, not programmers
-	- Not really, there is certainly quite some testing.
-	  Maybe I just don't know, I'm an academic, but certainly better than Python in my experience
-	- Also not really something we can do something about
-	- Also not really something we WANT to do something about
-        - The point of Julia is to be good for academics, we can;t have a language
-          that only works if used by non-academics
-
-	Actionable: No
-
+It's also not clear it's something the Julia community _ought to do something about_.
+The whole point of Julia is being a good language for academics; it makes no sense to blame its users for being academics. If writing correct Julia code is so hard that academics can't do it, we should make it easier to write correct code, not alienate the target audience.
 ### A culture of abstraction and generality
 * Seeking generality and abstraction
 	- Do we really need ever-growing generalizability?
