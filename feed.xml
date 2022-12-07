@@ -84,6 +84,25 @@
 
 <item>
   <title>
+    <![CDATA[  What&#39;s great about Julia?  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/goodjulia/index.html </link>
+  <guid> https://viralinstruction.com/posts/goodjulia/index.html </guid>
+  <description>
+    <![CDATA[  A mega-rant about all the things I find bad about Julia.  ]]>
+  </description>  
+    
+  <pubDate>Tue, 07 Dec 2021 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  Advent of Code 2021, day 1  ]]>
   </title>
   <link> https://viralinstruction.com/posts/aoc2021_1/index.html </link>
