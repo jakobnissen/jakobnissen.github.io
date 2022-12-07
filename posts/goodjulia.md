@@ -1,8 +1,8 @@
 @def rss = "A mega-rant about all the things I find bad about Julia."
-@def rss_pubdate = Dates.Date(2021, 12, 7)
+@def rss_pubdate = Dates.Date(2022, 12, 7)
 
 # What's great about Julia?
-_Written 2022-09-15, updated {{fd_mtime_raw}}_
+_Written 2022-12-07, updated {{fd_mtime_raw}}_
 
 The first post on this blog was "[What's bad about Julia](https://viralinstruction.com/posts/badjulia/)" - a collection of the worst things about my favourite language, which turned out to be quite the Hacker News bait.
 The most commmon responses I got was along the lines of: "If Julia has all these flaws, why not just use another language?".
