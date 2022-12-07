@@ -19,7 +19,7 @@ Now is the right time for that 4,000 word post on the _best_ parts of Julia.
 
 ## It's both fast and dynamic
 Julia's speed is _the_ first selling point of Julia, and for a reason.
-Speed is not the most groundbreaking or novel feature or Julia - that award probably goes to making multiple dispatch the only dispatch paradigm - but it's the aspect that makes using Julia it an un-ignorable option for some use cases.
+Speed is not the most groundbreaking or novel feature or Julia - that award probably goes to making multiple dispatch the only dispatch paradigm - but it's the aspect that makes using Julia an un-ignorable option for some use cases.
 Simply put, for dynamic languages like Python, R or Perl, there are no good options for performance, only a wide selection of poor choices.
 Before moving my work to Julia, I've had the misfortune of being exposed to several of the awkward performance hacks of Python:
 * I've shoehorned my program logic to be vectorizable by Numpy, and ran into plenty problems when I reached fundamentally serial code
@@ -28,7 +28,7 @@ Before moving my work to Julia, I've had the misfortune of being exposed to seve
 
 After having dealt with all those bullshit workarounds, moving my work to Julia was like suddenly breathing in fresh air. I just wrote my code - and optimised it - and then it was as fast as I could want it. And suddenly, all the awkward gymnastics I had been doing simply due to the limitation of Python seemed silly.
 
-That great combination is sometimes phrased as "As easy as Python, as fast as C".
+That great combination of speed and dynamism is sometimes phrased as "As easy as Python, as fast as C".
 The phrase is a little off, in my opinion - it's not really possible to have a language where you write as carelessly as you do for a casual Python script, and it still runs like optimised C code.
 Code can only ever be fast if it's written with [the contraints of computer hardware](https://viralinstruction.com/posts/hardware/) in mind, and idiomatic Python isn't.
 
@@ -57,7 +57,7 @@ This allows you do distinguish between direct and indirect dependencies, and mea
 For software engineering, only the project is necessary, and the manifest can be considered ephemeral.
 If you're a scientist and want to completely reproduce the environment that the code was originally run with, you can simply command Pkg to instantiate an exact environment from the manifest.
 
-Pkg is also delightfully fast. Resolving environments feel instant, as opposed to the glacially slow Conda that Python offers.
+Pkg is also delightfully fast. Resolving environments feels instant, as opposed to the glacially slow Conda that Python offers.
 The global "general" registry is downloaded as a single gzipped tarball, and read directly from the zipped tarball, making registry updates way faster than updating Cargo's crates.io. Or, if you want, you can easily toggle Pkg to offline mode and skip updating the index alltogether.
 The ease and speed of making environments and installing packages into them encourages users to create many separate environments for each little experiment or task, which in turns leads to smaller environments, which reduces the risk of upgrade deadlock.
 
@@ -107,19 +107,19 @@ In other words, the first argument to `+` decides what `+` means - this is what 
 But here's the thing about addition: It's commutative - precisely meaning that there is no order to `a + b` - it's exactly the same as `b + a`.
 By what authority does the first - really, just leftmost - argument have to decide the meaning of `+` for all the other arguments?
 
-None, of course. It's an artifact of how Python dispatch works, which has nothing to do with - and indeed, is at odds with how addition is actually defined.
+None, of course. It's an artifact of how Python dispatch works, which has nothing to do with - and indeed, is at odds with - how addition is defined.
 
-Consider the Python dunder method `__radd__`. Why does this exist? It's a hack, added solely so that you can make an object which defines the meaning of `+` when it's the _second_ argument.
-In other words, `__radd__` is a workaround of the limitations of single dispatch. A workaround, which only exists for a handful of hardcoded functions.
+Consider the Python dunder method `__radd__`. Why does this exist? It's a hack, added solely so that you can write a class which defines the meaning of `+` when it's the _second_ argument.
+In other words, `__radd__` is a workaround of the limitations of Python's dispatch model. A workaround, which only exists for a handful of hardcoded functions.
 
 Or consider the method `",".join(my_strings)`. Why is this a method of `","`? Surely, we would say that the _array of strings_ is being joined. We would not say that the comma joins the strings.
-The (boring) answer is that it's yet another artificial limitation of single dispatch.
-Because the `join` method ought to work with all kinds of iterables, there is no single class if iterables it can be tied to, and so the iterable _can't_ be the first element.
+The (boring) answer is that it's yet another artificial limitation of Python's dispatch:
+Because the `join` method ought to work with all kinds of iterables, there is no single class the method can be tied to, and so the iterable _can't_ be the first element.
 
 It's almost as if it doesn't make sense to define a function based only on one of its arguments.
 
 Why not simply dispatch on every argument?
-No need for `__radd__` business, or the forced inversions of arguments to functions like `join`. `+` would simply be defined with - wait for it - _both_ arguments, and `join` could be defined as just another function.
+No need for that `__radd__` business, or the forced inversions of arguments to `join`. `+` would simply be defined by - wait for it - _its arguments_, and `join` could be defined straightforwardly: `join(things, separator)`.
 
 My experience with learning how Julia's dispatch system worked was a weird sense of familiarity:
 This is how it was _supposed to work_ all along.
@@ -130,7 +130,7 @@ The adoptation of MD has been defining for Julia, in a way that was not clear to
 For example, it has turned out that MD has [enabled a shocking amount of code reuse in the Julia ecosystem](https://www.youtube.com/watch?v=kc9HwsxE1OY).
 
 Sometimes, multiple dispatch (MD) and single dispatch (SD) will behave the same, because the first argument happens to be sufficient to determine the right method.
-And sometimes, when you're aquianted with MD, you'll notice when coding in a SD language you sometimes have to twist your functions to make it fit into the SD mold.
+And sometimes, when you're aquianted with MD and are coding in a SD language, you notice you have to twist your functions to make it fit into the SD mold.
 It's never the other way around: Because MD is a natural generalization of SD, you never wish you had SD when you code in an MD language.
 
 ## The Julia REPL is amazing
