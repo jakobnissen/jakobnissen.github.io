@@ -46,6 +46,25 @@
 
 <item>
   <title>
+    <![CDATA[  What&#39;s great about Julia?  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/goodjulia/index.html </link>
+  <guid> https://viralinstruction.com/posts/goodjulia/index.html </guid>
+  <description>
+    <![CDATA[  A mega-rant about all the things I find bad about Julia.  ]]>
+  </description>  
+    
+  <pubDate>Wed, 07 Dec 2022 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  How to optimise Julia code: A practical guide  ]]>
   </title>
   <link> https://viralinstruction.com/posts/optimise/index.html </link>
@@ -74,25 +93,6 @@
   </description>  
     
   <pubDate>Sun, 23 Jan 2022 00:00:00 +0000</pubDate>  
-  
-  
-  <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
-  </atom:author>
-        
-</item>
-
-<item>
-  <title>
-    <![CDATA[  What&#39;s great about Julia?  ]]>
-  </title>
-  <link> https://viralinstruction.com/posts/goodjulia/index.html </link>
-  <guid> https://viralinstruction.com/posts/goodjulia/index.html </guid>
-  <description>
-    <![CDATA[  A mega-rant about all the things I find bad about Julia.  ]]>
-  </description>  
-    
-  <pubDate>Tue, 07 Dec 2021 00:00:00 +0000</pubDate>  
   
   
   <atom:author>
