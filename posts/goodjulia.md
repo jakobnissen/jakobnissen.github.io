@@ -1,11 +1,11 @@
-@def rss = "A mega-rant about all the things I find bad about Julia."
+@def rss = "A post about all the things I find good about Julia."
 @def rss_pubdate = Dates.Date(2022, 12, 7)
 
 # What's great about Julia?
 _Written 2022-12-07, updated {{fd_mtime_raw}}_
 
 The first post on this blog was "[What's bad about Julia](https://viralinstruction.com/posts/badjulia/)" - a collection of the worst things about my favourite language, which turned out to be quite the Hacker News bait.
-The most commmon responses I got was along the lines of: "If Julia has all these flaws, why not just use another language?".
+The most common responses I got was along the lines of: "If Julia has all these flaws, why not just use another language?".
 At the time, I just said that despite its flaws, Julia was still amazing, that it would take another 4,000 word post to elaborate on why, and then I left it at that.
 
 Recently I've been thinking a lot about one of Julia's major drawbacks, and have been drafting up a post that goes in depth about the subject.
@@ -19,14 +19,14 @@ Now is the right time for that 4,000 word post on the _best_ parts of Julia.
 
 ## It's both fast and dynamic
 Julia's speed is _the_ first selling point of Julia, and for a reason.
-Speed is not the most groundbreaking or novel feature or Julia - that award probably goes to making multiple dispatch the only dispatch paradigm - but it's the aspect that makes using Julia an un-ignorable option for some use cases.
+Speed is not the most groundbreaking or novel feature of Julia - that award probably goes to making multiple dispatch the only dispatch paradigm - but it's the aspect that makes using Julia an un-ignorable option for some use cases.
 Simply put, for dynamic languages like Python, R or Perl, there are no good options for performance, only a wide selection of poor choices.
 Before moving my work to Julia, I've had the misfortune of being exposed to several of the awkward performance hacks of Python:
-* I've shoehorned my program logic to be vectorizable by Numpy, and ran into plenty problems when I reached fundamentally serial code
+* I've shoehorned my program logic to be vectorisable by NumPy, and ran into plenty problems when I reached fundamentally serial code
 * I've used Numba and run into its arbitrary limitations to support normal Python code, such as custom classes
 * I've used Cython and experienced un-debuggable errors, linker issues on package installation, the inability to distribute my package as source code, and the clunkiness of a separate compilation step in a scripting language.
 
-After having dealt with all those bullshit workarounds, moving my work to Julia was like suddenly breathing in fresh air. I just wrote my code - and optimised it - and then it was as fast as I could want it. And suddenly, all the awkward gymnastics I had been doing simply due to the limitation of Python seemed silly.
+After having dealt with all those bullshit workarounds, moving my work to Julia was like suddenly breathing in fresh air. I just wrote my code - and optimised it - and then it was as fast as I could want it. And suddenly, all the awkward gymnastics I had been doing simply due to the limitations of Python seemed silly.
 
 That great combination of speed and dynamism is sometimes phrased as "As easy as Python, as fast as C".
 The phrase is a little off, in my opinion - it's not really possible to have a language where you write as carelessly as you do for a casual Python script, and it still runs like optimised C code.
@@ -40,16 +40,16 @@ Often, you'll find only a small fraction of the code actually needs to be optimi
 
 The "dynamic" half of the "fast and dynamic" duo should not be understated, either.
 I'm a scientist, which means my job description can be paraphrased as working with stuff I don't understand, trying to make sense of it.
-In that context, it's critically important to be able to pivot and iterate on a small script quickly as you test out and explore ideas - preferrably in an interactive manner on a dataset already in memory.
+In that context, it's critically important to be able to pivot and iterate on a small script quickly as you test out and explore ideas - preferably in an interactive manner on a dataset already in memory.
 
 This process is cumbersome and awkward to do with static languages.
-Rust, for example, may have a wonderfully expressive type system, but it's also boilerplate heavy, and its borrowchecker makes writing any code that compiles at all quite a time investment.
+Rust, for example, may have a wonderfully expressive type system, but it's also boilerplate heavy, and its borrow checker makes writing any code that compiles at all quite a time investment.
 An investment, which most of the time gives no returns when you're trying to figure how to approach the problem in the first place.
 It's also not entirely clear how I would interactively visualise and manipulate a dataset using a static language like Rust.
 
 ## The package manager is amazing
 These days, the package manager is probably the most central piece of software written for a programming language, other than the compiler itself.
-Here, Julia shines: Pkg.jl is an absolute joy to work with. Even after having used Julia for about 5 years, I'm still occasionally surprised by the thoughtfullness and convenience of Pkg.
+Here, Julia shines: Pkg.jl is an absolute joy to work with. Even after having used Julia for about 5 years, I'm still occasionally surprised by the thoughtfulness and convenience of Pkg.
 Coming from Python, which admittedly has a particularly bad package management story, Pkg is an absolute godsend.
 
 Like the Rust manager Cargo, but unlike, say, Python's Conda, Pkg separates the environment specification (the "project") from the resolved environment (the "manifest").
@@ -58,16 +58,16 @@ For software engineering, only the project is necessary, and the manifest can be
 If you're a scientist and want to completely reproduce the environment that the code was originally run with, you can simply command Pkg to instantiate an exact environment from the manifest.
 
 Pkg is also delightfully fast. Resolving environments feels instant, as opposed to the glacially slow Conda that Python offers.
-The global "general" registry is downloaded as a single gzipped tarball, and read directly from the zipped tarball, making registry updates way faster than updating Cargo's crates.io. Or, if you want, you can easily toggle Pkg to offline mode and skip updating the index alltogether.
+The global "general" registry is downloaded as a single gzipped tarball, and read directly from the zipped tarball, making registry updates way faster than updating Cargo's crates.io. Or, if you want, you can easily toggle Pkg to offline mode and skip updating the index altogether.
 The ease and speed of making environments and installing packages into them encourages users to create many separate environments for each little experiment or task, which in turns leads to smaller environments, which reduces the risk of upgrade deadlock.
 
 Beside specifying a version or a range of versions of a package you want to install, Pkg also allows you to install specific git commits or git branches.
 You can seamlessly install packages from remote git repositories, from local files, or from various registries.
-I say "various" registries, because Pkg is federated, and allows you to easily and freely mix multiple public and private package registries, even if they have no knowledge of each others and contain different packages with the same names.
+I say "various" registries, because Pkg is federated, and allows you to easily and freely mix multiple public and private package registries, even if they have no knowledge of each other and contain different packages with the same names.
 
 The ease of making and using custom registries makes it attractive for even small organisations to maintain their own private registry of Julia packages, instead of using large Julia monorepositories.
 For example, in my last job, I created my own registry to keep track of the software used in my department.
-This way, different packages in the same code base can pick their own versions of internal packages to use. This makes incremental upgrades, or simultanous development of two interdependent packages, much easier.
+This way, different packages in the same code base can pick their own versions of internal packages to use. This makes incremental upgrades, or simultaneous development of two interdependent packages, much easier.
 
 The package manager also manages arbitrary binary artifacts, such as compiled libraries and executables.
 The BinaryBuilder package allows you to cross-compile the same program to all platforms supported by Julia, and automatically create a small Julia library (jll) package which automatically selects and wraps the correct binary depending on platform, allowing it to be executed with a single Julia function.
@@ -87,16 +87,16 @@ In fact, you can get a profile of an _already running_ process with minimal runt
 
 Then, suppose you narrow your performance woes to a certain function `bar`. If it's not immediately obvious why that function runs slow, you might check Julia's type inference using `@code_warntype bar(arg)`,  where any problematic inference is colored red.
 Then, if you want to dig deeper, you can examine `bar` in every step of the compilation pipeline:
-* `@code_lowered` return Julia's IR of the function's content
+* `@code_lowered` return Julia's intermediate representation (IR) of the function's content
 * `@code_typed optimize=false` reports Julia's type inference on the IR
 * `@code_typed` shows the optimised IR after Julia's own passes such as inlining
 * `@code_llvm optimize=false` shows the LLVM IR generated by Julia
 * `@code_llvm` shows the optimised LLVM
 * `@code_native` shows the native assembly of the function
 
-From here, you can repeatedly modify and run the function, and immediately see the resulting impact on inference and codegen. This makes even micro-optimising Julia code is laughably easy.
+From here, you can repeatedly modify and run the function, and immediately see the resulting impact on inference and codegen. This means even micro-optimising Julia code is laughably easy.
 
-Julia is often critisised for its lacklustre developer tooling.
+Julia is often criticised for its lacklustre developer tooling.
 That's true in some areas of development, but certainly not profiling and optimisation.
 The many excellent packages useful for optimisation include, beside the ones I've already mentioned, a [memory profiler](https://docs.julialang.org/en/v1/manual/profile/#Memory-allocation-analysis), [inference debugger](https://github.com/JuliaDebug/Cthulhu.jl), [inference issue detector](https://aviatesk.github.io/JET.jl/stable/optanalysis/), [compiler profiler](https://github.com/timholy/SnoopCompile.jl), [benchmarker](https://github.com/JuliaCI/BenchmarkTools.jl), and probably many other tools I've forgotten.
 
@@ -114,7 +114,7 @@ In other words, `__radd__` is a workaround of the limitations of Python's dispat
 
 Or consider the method `",".join(my_strings)`. Why is this a method of `","`? Surely, we would say that the _array of strings_ is being joined. We would not say that the comma joins the strings.
 The (boring) answer is that it's yet another artificial limitation of Python's dispatch:
-Because the `join` method ought to work with all kinds of iterables, there is no single class the method can be tied to, and so the iterable _can't_ be the first element.
+because the `join` method ought to work with all kinds of iterables, there is no single class the method can be tied to, and so the iterable _can't_ be the first element.
 
 It's almost as if it doesn't make sense to define a function based only on one of its arguments.
 
@@ -122,16 +122,16 @@ Why not simply dispatch on every argument?
 No need for that `__radd__` business, or the forced inversions of arguments to `join`. `+` would simply be defined by - wait for it - _its arguments_, and `join` could be defined straightforwardly: `join(things, separator)`.
 
 My experience with learning how Julia's dispatch system worked was a weird sense of familiarity:
-This is how it was _supposed to work_ all along.
+this is how it was _supposed to work_ all along.
 Of _course_ a method should be defined by a function and _its arguments_.
 
 I don't think it's a coincidence that it feels so natural. After all, multiple dispatch (MD) is a natural solution to [the expression problem](https://en.wikipedia.org/wiki/Expression_problem) which so many languages suffer from.
-The adoptation of MD has been defining for Julia, in a way that was not clear to the developers when the language was concieved.
+The adoption of MD has been defining for Julia, in a way that was not clear to the developers when the language was conceived.
 For example, it has turned out that MD has [enabled a shocking amount of code reuse in the Julia ecosystem](https://www.youtube.com/watch?v=kc9HwsxE1OY).
 
 Sometimes, multiple dispatch (MD) and single dispatch (SD) will behave the same, because the first argument happens to be sufficient to determine the right method.
-And sometimes, when you're aquianted with MD and are coding in a SD language, you notice you have to twist your functions to make it fit into the SD mold.
-It's never the other way around: Because MD is a natural generalization of SD, you never wish you had SD when you code in an MD language.
+And sometimes, when you're acquainted with MD and are coding in an SD language, you notice you have to twist your functions to make it fit into the SD mold.
+It's never the other way around: Because MD is a natural generalisation of SD, you never wish you had SD when you code in an MD language.
 
 ## The Julia REPL is amazing
 Python has had a REPL for 30 years. So why does it still suck? Python's REPL is the REPL equivalent of [the `ed` editor](https://www.gnu.org/fun/jokes/ed-msg.en.html). You might _technically_ be able to write code in it, but that's about all the good there is to say about it.
@@ -141,7 +141,7 @@ Want to rerun the block above? Have fun re-typing it one line at a time.
 Want to edit single line above the one you just wrote? Edit your expectations.
 
 Compare to Julia's REPL, which feels like a proper editor:
-It has advanced tab-completion, including of system paths and keys of a dictionary. 
+It has advanced tab-completion, including for system paths and keys of a dictionary. 
 It allows navigating and editing entire blocks of code at a time.
 You can edit these blocks with several convenient editor-like keybindings.
 If you don't like the keybindings, they're customisable, of course.
@@ -149,7 +149,7 @@ If you don't like the keybindings, they're customisable, of course.
 And in fact, since the REPL is simply a stdlib package with an interface, it's easily extensible.
 For example, I use the package `OhMyREPL`, which extends the default REPL to have syntax highlighting and a REPL history browser with fuzzy search.
 
-Julia sometimes get flak for having poor documentation. But let's compare the documentation you get in the Python REPL vs what you get in Julia:
+Julia sometimes gets flak for having poor documentation. But let's compare the documentation you get in the Python REPL vs what you get in Julia:
 In Python, you have the `help` function:
 
 ```
@@ -255,32 +255,33 @@ These days, I do all my Julia work in an editor connected to the REPL.
 
 ## Strong ecosystem tooling consensus
 Nowadays, there are a lot of demands on modern programming languages.
-It's not enough to simply provide a working compiler: People want editor plugins with syntax highlighting,
+It's not enough to simply provide a working compiler: people want editor plugins with syntax highlighting,
 a profiler and benchmarking software, a debugger, a static type checker, a large stdlib,
 a documentation system with doctests that can generate a searchable HTML site,
 a test framework with CI hooks and code coverage, a feature-rich package manager, and much else. All for free, of course.
 
-The advantage of all these demands is that when a new language materializes, there is already a standard approach to all these things:
+The advantage of all these demands is that when a new language materializes, there is already a standard approach to all these things.
 In Julia, there is a single default test framework, a default way of running CI, and one go-to documentation system: `Documenter`. As a user, it makes it easy to just use what everyone else uses.
 This leads to best practices being more widely adopted.
 
 For example, most Julia packages tends to be well-tested and documented:
-* 88% of packages has documentation, 33% of packages has more than 10% of their content be documentation
-* 89% of registered Julia packages has at least 10 lines of tests
-* 95% of packages has registered CI
+* 88% of packages have documentation, 33% of packages have more than 10% of their content as documentation
+* 89% of registered Julia packages have at least 10 lines of tests
+* 95% of packages have registered CI
 
 Pretty good numbers, considering that this is for _all_ registered Julia packages, including beginner programmers' packages. I'm not sure how these numbers look for e.g. PyPI, but I'd be surprised if they were anywhere close to as good.
 
 The picture does not fit with the Julia's reputation for having poor documentation, so what's up with that?
 
-In my view, Julia has this reputation because it has far fewer huge flagship packages like PyTorch or Numpy, which again is simply because Julia is much younger, less popular, and with less corporate backing.
+In my view, Julia has this reputation because it has far fewer huge flagship packages like PyTorch or NumPy, which again is simply because Julia is much younger, less popular, and with less corporate backing.
 So, people naturally compare the documentation of PyTorch - a huge flagship package authored by Facebook (reportedly worked on by 300 paid developers at one time!) with 1.5 million lines C and C++ code and 1 million lines of Python code - with Flux.jl, a 10,000 LOC package, maintained by a handful of people, most of whom are not paid to do so.
 Obviously, they find Flux's documentation lacklustre in comparison.
 
 ## Multithreading is easy
-In my experience, multithreading in Julia - unlike _some other dynamic languages_ - is usually as easy as slapping `@threads` in front of a for loop, which will cause each iteration to be scheduled in a separate thread.
+In my experience, multithreading in Julia - unlike _some other dynamic languages_ - is usually as easy as slapping `@threads` in front of a `for` loop, which will cause each iteration to be scheduled in a separate thread.
 
 ```julia
+julia> using Base.Threads
 julia> @threads for i in 1:16
            print(i, ',') # IO is thread-safe
        end
@@ -306,8 +307,8 @@ julia> @time begin
 1000000
 ```
 
-I don't know much about the intricasies of multithreading, so I couldn't tell you if Julia's approach to multithreading is groundbreaking or well designed.
-What I _can_ tell you, is that in Julia, it is _so easy_ to use multiple threads effectively, that even though I don't feel that confident writing complex multithreaded code, most my performance sensitive scripts are multithreaded where it's obvious to do so.
+I don't know much about the intricacies of multithreading, so I couldn't tell you if Julia's approach to multithreading is groundbreaking or well designed.
+What I _can_ tell you, is that in Julia, it is _so easy_ to use multiple threads effectively, that even though I don't feel that confident writing complex multithreaded code, most of my performance sensitive scripts are multithreaded where it's obvious to do so.
 
 ## The type system works well
 There's a section on my original "What's bad about Julia" blogpost called "The type system works poorly".
@@ -315,7 +316,7 @@ It's the one place where I most regret being imprecise. What I gripe about in th
 But there is more to a type system than subtyping, and in so many other ways, Julia's type system is great.
 
 The type system is nice and _expressive_ with its union types, generic types, variadic types and all that other jazz, but having a nice, expressive type system is hardly special for modern languages.
-What feels special about the Julia type system is that it manages to be both strict and excellent at dealing with uncertaincy.
+What feels special about the Julia type system is that it manages to be both strict and excellent at dealing with uncertainty.
 
 Dynamic languages often don't have a real type system. For example, Python's type system only exists in your IDE's type checker, not really at runtime.
 If I do a typecast or type assertion in Python, it will be ignored at runtime.
@@ -329,23 +330,23 @@ So, Julia has a type system quite recognisable by users of modern, static langua
 When trying out a quick experiment, or iterating on a half-baked idea, it's completely fine to hammer out code where the compiler has no idea what is going on.
 
 This combination of both enforcing types where required, and being comfortable with type uncertainty makes _gradual typing_ natural, such that the user can get the best of both the dynamic and static world:
-You can quickly iterate on untyped or poorly inferred code, and then when you settle down on a design, it takes only small changes to lock down the types. Once the compiler can completely infer the program, you can use Julia's own compiler to statically analyse your entire program and find errors.
+you can quickly iterate on untyped or poorly inferred code, and then when you settle down on a design, it takes only small changes to lock down the types. Once the compiler can completely infer the program, you can use Julia's own compiler to statically analyse your entire program and find errors.
 
 Analogous to Julia's favourable position w.r.t.  gradual performance, Julia is uniquely suited for a kind of gradual safety, where a program can begin its development as dynamically typed with few guarantees, and be incrementally hardened against type errors and other logical errors as the program matures.
-Gradual safety would give Julia a unique and compelling selling point: Just like Julia has already broken the tradeoff between expressiveness and speed, it will hopefully also in the future break the tradeoff between expressiveness and safety, where other languages are forced to choose.
+Gradual safety would give Julia a unique and compelling selling point: just like Julia has already broken the tradeoff between expressiveness and speed, it will hopefully also in the future break the tradeoff between expressiveness and safety, where other languages are forced to choose.
 
 Julia is not yet ready for this gradual safety, because we lack the tooling to exploit the inherent ability of Julia code to be statically checked.
-This tooling is a long-term goal of the core developers, and I'm confident the situation will improve the following years, as it already has improved the last few years.
+This tooling is a long-term goal of the core developers, and I'm confident the situation will improve in the following years, as it already has improved the last few years.
 
 ## It just keeps getting better
 For better and worse, Julia is not yet an old, established language. The "better" side is that Julia is being actively developed, so there are still many improvements on the horizon which hopefully will make Julia an even nicer language in the next few years.
 
 The improvements mentioned below are not of the hypothetical "sufficiently smart compiler" kind which may never arrive. Even though the developers are also looking at some speculative cutting-edge compiler technologies, I'll not write about them here.
-Instead, the improvements below are merely the adoptation of already existing technologies into Julia. Adopdation, which I'm confident will happen eventually.
+Instead, the improvements below are merely the adoption of already existing technologies into Julia. Adoption, which I'm confident will happen eventually.
 
 Julia latency will continue to improve. First, by being able to cache native code between sessions. Later, by enabling multithreading in the compiler, and possibly a tiered JIT that enables code to start quick using an interpreter, and incrementally hot-load optimised code being compiled in a background process. I expect the latency of most large packages will fall by 10x in the next two to three years due to only the improvements already on the way.
 
-It's not currently possible to compile static binaries from inferrible Julia code, but Julia is fundamentally a compiled language, and there is no deep reason you shouldn't be able to compile Julia code to an executable binary instead of into RAM. Indeed, work to enable static compilation to produce large Go-like binaries which include the runtime and garbage collector has already been underway for some time.
+It's not currently possible to compile static binaries from inferable Julia code, but Julia is fundamentally a compiled language, and there is no deep reason you shouldn't be able to compile Julia code to an executable binary instead of into RAM. Indeed, work to enable static compilation to produce large Go-like binaries which include the runtime and garbage collector has already been underway for some time.
 
 ## It's weirdly fun
 There's something nebulous about the language that makes it really fun to write code in. Maybe it's that it's easy to get started with, and highly expressive such that you quickly get working code between your fingers to play with, similar to Python.
