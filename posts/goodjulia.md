@@ -291,19 +291,19 @@ julia> @threads for i in 1:16
 For programs with a more complicated control flow structure, Julia exposes low-level threading primitives through a convenient and flexible interface.
 Julia uses "green threading", which means the language runtime manages multiple virtual threads (in Julia called tasks) on top of the operating system.
 Avoiding OS-overhead makes spawning tasks lightweight, so thousands or millions can be spawned with no particular performance implications.
-For example, it takes only 2 seconds to spawn and finish 1 million tasks which all atomically modify the same integer:
+For example, it takes only 4 seconds to spawn, finish and check 1 million tasks which all atomically modify the same integer:
 
 ```julia
 julia> @time begin
            atom = Atomic{Int}()
            local task
-           for i in 1:1_000_000
+           @sync for i in 1:1_000_000
                task = @spawn atomic_add!(atom, 1)
            end
            wait(task)
            atom[]
        end
-  2.033598 seconds (8.00 M allocations: 503.630 MiB, 33.43% gc time, 0.43% compilation time)
+  3.919346 seconds (9.00 M allocations: 574.411 MiB, 16.57% gc time, 0.94% compilation time)
 1000000
 ```
 
