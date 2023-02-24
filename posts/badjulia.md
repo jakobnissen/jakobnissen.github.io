@@ -4,6 +4,8 @@
 # What's bad about Julia?
 _Written 2021-07-25, updated {{fd_mtime_raw}}_
 
+_Also see the sibling post: [What's great about Julia?](https://viralinstruction.com/posts/goodjulia/)_
+
 Julia is my favorite programming language. More than that actually, perhaps I'm a bit of a fanboy. Sometimes, though, the ceaseless celebration of Julia by fans like me can be a bit too much. It papers over legitimate problems in the language, hindering progress. And from an outsider perspective, it's not only insufferable (I would guess), but also obfuscates the true pros and cons of the language. [Learning why you may _not_ want to choose to use a tool](https://matklad.github.io/2020/09/20/why-not-rust.html) is just as important as learning why you may.
 
 This post is about all the major disadvantages of Julia. Some of it will just be rants about things I particularly don't like - hopefully they will be informative, too. A post like this is necessarily subjective. For example, some people believe Julia's lack of a Java-esque OOP is a design mistake. I don't, so the post won't go into that.
