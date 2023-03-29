@@ -3,6 +3,8 @@
 Hi! I'm Jakob, a researcher-programmer working in bioinformatics. I write about scientific programming, mostly about [Julia](https://julialang.org/) and [Rust](https://www.rust-lang.org/). I also sometimes write about cool things in genomics, virology or molecular biology.
 
 # Posts
+* [Julia's latency: Past, present and future](/posts/latency)
+
 * [What's great about Julia?](/posts/goodjulia)
 * [How to optimise Julia code: A practical guide](/posts/optimise)
 * [In defense of complicated programming languages](/posts/defense)
