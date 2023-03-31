@@ -46,6 +46,25 @@
 
 <item>
   <title>
+    <![CDATA[  Julia&#39;s latency: Past, present and future  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/latency/index.html </link>
+  <guid> https://viralinstruction.com/posts/latency/index.html </guid>
+  <description>
+    <![CDATA[  A brief history of Julia&#39;s latency issues and what we may expect in the future.  ]]>
+  </description>  
+    
+  <pubDate>Sat, 01 Apr 2023 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  What&#39;s great about Julia?  ]]>
   </title>
   <link> https://viralinstruction.com/posts/goodjulia/index.html </link>
