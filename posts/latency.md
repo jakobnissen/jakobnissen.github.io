@@ -464,7 +464,7 @@ Most recently, [PR 47797](https://github.com/JuliaLang/julia/pull/47797) paralle
 There is still some way to go until Julia's compiler can use multiple threads for compilation during a session or script, but [it is on the horizon](https://www.youtube.com/watch?v=A0VwcXcAz4o), meaning it will hopefully land over the next few years.
 
 #### Compile to static libraries or binaries
-Julia already already compile to machine code - it just compiled directly in the memory of your computer. Then why can't it compile the same code to binaries or libraries?
+Julia already compile to machine code - it just compiled directly in the memory of your computer. Then why can't it compile the same code to binaries or libraries?
 Indeed, there is nothing _fundamental_ in Julia preventing this - it simply hasn't been implemented yet.
 
 There has already been some foundational work to enable this.
@@ -487,8 +487,9 @@ LLVM has functionality for this "compile on demand", and Prem Chintalapudi is wo
 #### Hybrid compiler/interpreter
 More speculatively, the developers have talked about executing Julia using an interpreter, then compiling the same code in a background thread, and switching execution from the interpreted version to the compiled version when the compiled version is done.
 
-This is a highly speculative optimisation, and as far as I know, no actual work has been done in this area so far, so if this optimisation ever lands, it will take many years.
-
+This is pretty tricky for Julia in particular: The language has come to _depend_ on an efficient compiler to produce code with any reasonable runtime performance, as Julia methods often relies on trait types or recursive inference, knowing that it will compile away before runtime.
+Hence, a Julia interpreter is _massively_ slower than e.g. a Python interpreter, and would need serious performance improvements before it would be suitable as the go-to code executor.
+So, a hybrid compiler/interpreter is at the moment highly speculative optimisation, and as far as I know, no actual work has been done in this area so far, so if this optimisation ever lands, it will take many years.
 
 #### More tooling improvements?
 This is sort of a joker, because tooling to allow developers to reduce latency has already improved quite a lot, and it's difficult as a user to put my finger on _exactly what_ kind of tooling I'd like to see getting build.
