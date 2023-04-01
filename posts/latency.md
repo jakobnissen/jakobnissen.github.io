@@ -295,6 +295,9 @@ This only sped up package installation time (which I do not consider "latency" i
 
 [PR 45276](https://github.com/JuliaLang/julia/pull/45276) in Julia 1.9 makes the compiler scale better with the length of functions. This only really matters for packages that uses huge functions, typically programatically generated functions.
 
+[PR 47695](https://github.com/JuliaLang/julia/pull/47695) in Julia 1.9 added _package extensions_, which allow users to extend code from other packages without having them as dependencies.
+It is still to early to tell the impact of this PR, but it could potentially significantly lower the number of dependencies of packages throughout the ecosystem, thereby indirectly lower latency.
+
 ### Impact of efforts so far
 So: How much have all these initiatives mattered?
 To check it, I made five different latency-heavy workloads, and tested them on 6 different versions of Julia.
@@ -407,7 +410,8 @@ Adding a SnoopCompile workload is the only latency-reducing measure you need to 
 Luckily, it's quick and easy to do.
 
 ### 4: Write inferable code
-Get in the habit of writing inferable code. Use `@code_warntype` to check your code is type stable and Cthulhu.jl to debug complex type inference issues (though that is rarely necessary).
+Get in the habit of writing inferable code.
+If you're uncertain if, or why, a function is uninferable, use `@code_warntype`, or, preferably, the more featueful `@descend` from Cthulhu.jl's to investigate.
 Inferable code is faster at runtime - also after compilation - it is more debuggable, behaves more predictable and can be analysed statically.
 Don't worry - writing inferable code by default quickly becomes a habit.
 In fact, I would argue that building the habit of writing inferable code makes you a better programmer.
@@ -487,8 +491,10 @@ LLVM has functionality for this "compile on demand", and Prem Chintalapudi is wo
 #### Hybrid compiler/interpreter
 More speculatively, the developers have talked about executing Julia using an interpreter, then compiling the same code in a background thread, and switching execution from the interpreted version to the compiled version when the compiled version is done.
 
-This is pretty tricky for Julia in particular: The language has come to _depend_ on an efficient compiler to produce code with any reasonable runtime performance, as Julia methods often relies on trait types or recursive inference, knowing that it will compile away before runtime.
-Hence, a Julia interpreter is _massively_ slower than e.g. a Python interpreter, and would need serious performance improvements before it would be suitable as the go-to code executor.
+This is pretty tricky for Julia in particular: The language has come to _depend_ on an efficient compiler to produce code with any reasonable runtime performance.
+Primarily because Julia is mostly implemented in Julia, all the way down to low-level integer operations, running Julia through an interpreter adds way more overhead than for e.g. Python, whose interpreter can simply offload all the low-level stuff to Python's internals written in C.
+Also, idiomatic Julia tends to be written in a way that makes use of copious zero-cost abstractions, expecting their cost to be compiled away before runtime.
+Hence, a Julia interpreter is _massively_ slower than even Python, and would need serious performance overhauls and some clever design before it would be suitable as the go-to code executor.
 So, a hybrid compiler/interpreter is at the moment highly speculative optimisation, and as far as I know, no actual work has been done in this area so far, so if this optimisation ever lands, it will take many years.
 
 #### More tooling improvements?

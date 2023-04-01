@@ -265,10 +265,9 @@ If your code contains a function call that is not statically inferrible, JET wil
 This limitation is normally not a big deal because only reporting the _first_ instance of inference problems in a call chain is usually sufficient to alert you of performance problems.
 
 ### Cthulhu
-Cthulhu is not only a Lovecraftian cosmic horror, but also a Julia package that allows the user to interactively traverse a call graph, calling `@code_warntype` on each call encountered.
+Cthulhu is not only a Lovecraftian cosmic horror, but also a Julia package that allows the user to interactively explore type inference in their code, letting you step into function calls one at a time while displaying the compiler's information.
 
-The tag line of Cthulhu is "_the slow descent into madness_", which presumably refers to the user experience of manually stepping through a long call chain to diagnose inference issues.
-I recommend just using JET over Cthulhu, and only mention the package here because you might find references to it in posts that predate JET.
+It's most easily used as a better, more featureful version of `@code_warntype`, but its rich features makes it better suited to debug truly nasty type instability issues.
 
 ### Profiler
 Julia comes with [the stdlib package `Profile`](https://docs.julialang.org/en/v1/manual/profile/) which is simple, but effective.
