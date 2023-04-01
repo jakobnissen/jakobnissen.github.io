@@ -17,7 +17,7 @@ But what exactly has happened since Julia v1.0?
 Has latency really dropped by a factor of 10?
 And what exactly is planned for the future?
 
-In this post, I'll give a brief history of Julia's latency, discuss the current status of latency in Julia, and speculate on future work to reduce latency further.
+In this post, I'll give a brief history of Julia's latency, discuss its current status, and speculate on future work to reduce latency further.
 This post is meant both for potential Julia users curious about the language, but who wants to wait until latency is better before they begin using it, and for current Julia users who are out of the loop about developments in latency and wants to catch up.
 
 If you're impatient, you can skip to [a graph summarizing efforts so far](#impact_of_efforts_so_far).
@@ -30,7 +30,7 @@ If you're impatient, you can skip to [a graph summarizing efforts so far](#impac
 Before Julia 1.5, reducing latency was not a top priority for the core developers.
 Of course, as a major usability problem experienced by daily users, latency _did_ receive some attention, and latency-reducing PRs were made.
 
-But back before v1.5, there were other priorities for the developers.
+But back before v1.5, there were other priorities.
 Pre v1.0, focus was obviously on getting the semantics and API of the language right, since that would be set in stone with the release of 1.0.
 After 1.0, attention turned towards areas of the language where it was deemed that not fleshing them out quickly could cause long-term problems for the language.
 For example, the package manager needed to support federated package registries and move away from relying on GitHub, and Julia's multithreading API had to be established.
@@ -39,10 +39,10 @@ As a result, nothing much happened regarding latency from around 2017 (where I l
 Most of the features that was deemed time critical did land between Julia 1.0-1.4, after which the developers [turned a large part of their attention to reducing latency](https://www.youtube.com/watch?v=xKrIp4ZVOrg&t=225s).
 
 ### The first obvious step: Cache more code
-The first, most promising avenue to dramatically reduce latency caused by compilation was to cache it.
-It was believed that in any given session, users would only need to redefine a tiny fraction of the total amount of compiled code, and therefore only should need to _compile_ a tiny fraction of the code and could theoretically load the rest from a cache serialised to disk.
+The first, most promising avenue to dramatically reduce latency caused by compilation was to cache more code.
+It was believed that in any given session, users would only need to (re)define a tiny fraction of the total amount of compiled code, and therefore only should need to _compile_ a tiny fraction of the code and could theoretically load the rest from a cache serialised to disk.
 
-Since Julia v1.0 (and before), Julia already cached compiled code in two places:
+Since Julia v1.0 (and before), Julia already has two distinct mechanisms for caching code:
 Code compiled during a session was cached in memory, and code compiled during package installation was cached to disk in a process known as _precompilation_.
 However, these two caching mechanisms were severely limited in the pre-1.5 period.
 To properly explain the issues, it's worth taking a detour to get an overview of the code caching systems in Julia.
@@ -76,7 +76,7 @@ This is what happens:
   The details of how this happens is is not relevant here, [you can learn about this elsewhere](https://www.youtube.com/watch?v=gcZJkZqTxso).
 * Second, the found method, here, `g(::Any)` is monomorphized to a _methodinstance_.
   That means the compiler creates a non-generic _methodinstance_ `g(::Vector{Int})` out of the generic method `g(x::Any)` by looking at the actual, concrete types of the arguments at runtime (namely `Vector{Int}`).
-*  Then, _after_ the code has been monomorphized, and the methodinstance compiled, the methodinstance is called and `25` is returned. Since the methodinstance is not generic but only contains concrete types, the compiler is able to generate efficient code despite Julia being dynamic.
+*  Then, _after_ the code has been monomorphized, and the methodinstance compiled, the methodinstance is called and its value returned. Since the methodinstance is not generic but only contains concrete types, the compiler is able to generate efficient code despite Julia being dynamic.
   In this case, it just returns a literal `25`.
 
 Invoking the compiler at _every_ function call would be totally unworkable, so this scheme only works due to two important optimisations:
@@ -89,11 +89,11 @@ So, when `f` is called from `g`, there is no need to look `f` up in the cache.
 Essentially, when the compiler knows at compile time what methods it needs to call, it behaves like a normal static language, with all the performance gains that come from that.
 
 Besides caching already-compiled methodinstances in memory, packages may also _precompile_ some of their methods.
-The idea here is that if a package defines some method `foo`, it might as well be compiled when the package in installed.
+The idea here is that if a package defines some method `foo`, the method might as well be compiled when the package in installed.
 The compiled code can be serialised to disk, then loaded when the user loads the package, similar to a normal static language.
 
 In the pre-1.5 era, both types of caching had significant limitations that needed to be lifted to improve caching, and hence latency.
-The problem was that there was widespread _cache invalidation_: A large fraction of the methods being cached needed to be cleared from the cache and re-compiled.
+The main problem was that there was widespread _cache invalidation_: A large fraction of methods were being compiled and stored in the cache, only to then be cleared from the cache and re-compiled.
 It was believed that addressing invalidations was the most important first step: By reducing invalidations, less code had to be recompiled, leading to easy latency wins.
 Furthermore, any other optimisations to the cache would be defeated if most of the cached code had to be invalidated anyway.
 
@@ -103,7 +103,7 @@ Thus, after the release of Julia 1.4, the developers and especially Timothy Holy
 As shown above, Julia 1) caches compiled methodinstances in memory, and 2) is, like other compiled languages, able to insert static callsites and inline functions.
 
 Unfortunately, these two optimisations conflict somewhat with having a dynamic, interactive language.
-For example, if I define the functions `f` and `g` as above, I can then redefine `f` - and `g` must still work:
+For example, if I define the functions `f` and `g` as above, I can then redefine `f` - and `g` must still work[^1] :
 
 @@juliacode
 ```julia
@@ -135,7 +135,7 @@ To understand _those_, we have to look at how Julia deals with _uninferable code
 Because Julia is supposed to be expressive, high-level, dynamic and interactive, it's an absolute non-starter to require Julia code to be completely inferable, as static languages require.
 It _must_ be possible to run, and therefore compile, code where the compiler does not know all types, and so the Julia compiler is designed to handle a kind of "gradual typing", where only partial type information is known.
 
-Of course, with only partial type information, the compiler is limited in its optimisations, and must produce code that is much slower and which checks all unknown types at runtime.
+Of course, with only partial type information, the compiler is limited in its optimisations, and must produce code that is slower and which checks all unknown types at runtime.
 Nonetheless, it has been a focus for the Julia developers to create a compiler that can produce reasonably fast code even with limited type information.
 
 Let's look at an example.
@@ -235,13 +235,13 @@ Hence, if I create a package where I define a method `foo(a, b, c)`, there is no
 Before v1.8, package authors could add precompilation statements of the form:
 
 ```
-precompile(my_function, (MyType, Int, String))
+precompile(foo, (MyType, Int, String))
 ```
 
 to cache the methodinstance `foo(::MyType, ::Int, ::String)`.
 Unfortunately, creating these statements and copy-pasting them into your code were a pain in the butt, and so very few package authors bothered to do so.
 This changed with Julia 1.8, when the package [SnoopPrecompile.jl](https://github.com/timholy/SnoopCompile.jl) was released.
-With it, authors simply needed to create a block of code, that uses functionality from the package, and wrap it in a `@precompile_all_calls` macro.
+With it, authors simply need to create a block of code, that uses functionality from the package, and wrap it in a `@precompile_all_calls` macro.
 When running the macro, `SnoopPrecompile` will record all methods being compiled during execution of the code, and automatically emit precompilation statements for these during package installation time.
 Even cooler, this _only_ happens during package installation: During normal package loading, the entire SnoopPrecompile codeblock will be compiled to a no-op, thus contributing minimally to latency itself.
 
@@ -258,16 +258,16 @@ end
 @@
 
 and all functions called by any function inside the block would be precompiled.
-This way, SnoopPrecompile made precompilation so easy any package author who cares about their users' latency can use it.
+This way, SnoopPrecompile made precompilation so easy that any package author who cares about latency can precompile much of their code.
 As of April 2023, SnoopPrecompile has 148 direct dependents, a number that I very much hope will continue to grow in the future.
 
 ### Caching external codeinstances: v1.8
-Before Julia 1.8, only a small fraction of the results from compilation pipeline was saved during precompilation.
-Part of the reason for that was that a package only saved code that "belonged" to the package itself, i.e. methodinstances for which either the function, or one of the arguments were defined in the package.
-If package A imported function `f` from package X and type `T` from package Y, then called `f(::T)`, that methodinstance did not belong to package A, and was therefore not eligible for precompilation.
+Before Julia 1.8, a large fraction of methodinstances could not be compiled, even if precompile statements were generated for them. The reason was that packages could only save code that "belonged" to the package itself, i.e. methodinstances for which either the function, or one of the arguments were defined in the package.
+If package A imported function `f` from package X and type `T` from package Y, then called `f(::T)`, that methodinstance did not belong to package A, and was therefore not eligible for precompilation[^2].
 
 [PR 43990](https://github.com/JuliaLang/julia/pull/43990) enabled packages to also cache "external codeinstances", namely code defined in other packages.
 This, in theory, enabled caching of essentially all function calls.
+The combination of this PR with SnoopPrecompile made precompilation far more widespread and was the reason for the observed drop in latency many packages experienced from Julia 1.7 to Julia 1.8.
 
 ### Package images: v1.9
 Another major issue with precompilation was that only a small part of the whole compilation pipeline could be precompiled.
@@ -275,12 +275,13 @@ Briefly, Julia's compiler process code in several steps:
 * First, Julia source code is lowered to... well, lowered code, the highest level of Julia IR, with a fairly straightforward correspondance to source code.
   This always happens at precompile time to all source code, such that raw source code is never loaded from disk.
 * Then, type inference is run on the lowered code.
-  This is the step that requires monomorphization, and therefore precompile statement (or a SnoopPrecompile block) in order to determine the concrete methodinstances to compile.
+  This is the step that requires monomorphization, and therefore a precompile statement (or a SnoopPrecompile block) in order to determine the concrete methodinstances to compile.
 * Third, Julia's front-end compiler will optimise the lowered code using the usual compiler tricks such as inlining, loop hoisting etc into fairly low-level Julia-like code.
   With the changes in v1.8, practically all code up to and including this level could be cached.
 * Finally, Julia emits LLVM code from its IR, and calls into LLVM to produce machine code from that.
 
-LLVM is famously slow, so not being able to cache native code was a major restriction of precompilation.
+Prior to Julia 1.9, the native code from this last step could not be cached to disk during precompilation.
+LLVM is famously slow, so not the uncacheability of this bottleneck was a major restriction of precompilation.
 This changed with [PR 44527](https://github.com/JuliaLang/julia/pull/44527) and [PR 47184](https://github.com/JuliaLang/julia/pull/47184), such that in v1.9, the result of all steps of the compiler can be cached during precompilation.
 
 Hence, from version 1.9, all code can be cached, and theoretically, no code actually needs to be compiled by the user (though in practice, users probably wants to define and compile some new methods themselves).
@@ -290,9 +291,9 @@ The last major step in the long process of improving code caching was complete.
 In 1.6, precompilation was parallelised.
 This only sped up package installation time (which I do not consider "latency" in this article), but in doing so incentivized developers to move more work to precompile time, so is worth mentioning.
 
-[PR 43852](https://github.com/JuliaLang/julia/pull/43852) and many follow-up PRs upgraded the compiler's reasoning about side effects from Julia 1.8 onwards, allowing the compiler to use the faster constant evaluation instead of constant folding/propagation.
+[PR 43852](https://github.com/JuliaLang/julia/pull/43852) and many follow-up PRs upgraded the compiler's reasoning abo    ut side effects from Julia 1.8 onwards, allowing the compiler to use the faster constant evaluation instead of constant folding/propagation.
 
-[PR 43852](https://github.com/JuliaLang/julia/pull/45276) in Julia 1.9 makes the compiler scale better with the length of functions. This only really matters for packages that uses huge functions, typically programatically generated functions.
+[PR 45276](https://github.com/JuliaLang/julia/pull/45276) in Julia 1.9 makes the compiler scale better with the length of functions. This only really matters for packages that uses huge functions, typically programatically generated functions.
 
 ### Impact of efforts so far
 So: How much have all these initiatives mattered?
@@ -318,17 +319,17 @@ All workloads are by far fastest in this latest release.
 Compared to v1.4, the latency is between 3 and 13 times lower - in absolute terms, it dropped from 11 seconds to 0.9 seconds for JuliaFormatter and from 19 to 3 seconds for Plots, whereas DataFrames "only" dropped from 9 to 3 seconds, and FASTX from 2.6 to 0.7 seconds.
 
 #### Not much happened from v1.4 to v1.7
-This is probably the most surprising to me - Julia v1.6 was widely considered a quantum leap in terms of latency, and there has been a continuous stream of smallers latency-focused PRs since v1.6 not mentioned in this blog post.
+This was the most surprising finding to me - Julia v1.6 was widely considered a quantum leap in terms of latency, and there has been a continuous stream of smaller latency-focused PRs since v1.6 not mentioned in this blog post.
 Yet in the plot, for three of the five workloads, Julia v1.7 is worse than Julia v1.4.
 Why are the fruits of these efforts not visible in the plot - indeed, why does it get _worse_?
 
 One explanation could be that I just picked particularly unlucky packages.
-Anecdotally, some packages like SIMD.jl and LoopVectorization.jl experienced massive improvements when invalidations were reduced in Julia 1.6, but I happened to not pick a workload using SIMD.jl for my test.
+Anecdotally, some packages like SIMD.jl and LoopVectorization.jl experienced massive improvements when invalidations were reduced in Julia 1.6, but I happened to not pick any using these packages for my test.
 However, I don't think the packages I chose are particularly unlucky - certainly not Plots.jl or FASTX.jl - and besides, the improvements to latency are widely assumed to apply to packages generally, not just select packages.
 
 Another factor could be that latency improvements are matched one-for-one with regressions introduced by new compiler capabilities.
 Since Julia v1.4, the compiler has gotten significantly smarter and will, among other things, constant-fold/evaluate much more aggressively, elide boundschecks automatically if safe, and generally infer better.
-It is well known that, without a concerted effort to reduce compiler performance, compiler speed tends to regress over time as they accumulate more features.
+It is well known that, without a concerted effort to retain compiler speed, it tends to regress over time as they accumulate more features.
 [This has famously happened to LLVM](https://www.npopov.com/2020/05/10/Make-LLVM-fast-again.html), the compiler backend used by Julia.
 I personally think the new compiler improvements are awesome and worth the latency, but it's worth thinking about the cost.
 
@@ -347,7 +348,7 @@ The most impactful changes so far has been about allowing package authors to pre
 With package images in v1.9, precompilation has been massively improved and is in the grand scheme of things _done_, enabling speedups that are _actually_ an order of magnitude.
 
 But the keyword here is _enabling_ - the efforts only bear fruit if package authors exploit them.
-We've already seen many packages get serious about precompilation but I believe the package ecosystem is currently far behind [what Julia actually makes possible](https://sciml.ai/news/2022/09/21/compile_time/), and we could all have significantly lower latency if we only made use of the advances th[4;1034;950tat has been made. 
+We've already seen many packages get serious about precompilation but I believe latency in the package ecosystem is currently far worse than [what Julia makes possible](https://sciml.ai/news/2022/09/21/compile_time/), and we could all have significantly lower latency if we only made use of the advances that has been made. 
 
 So - how do you do make your package precompilable as an author?
 The good news is that the same steps that reduce latency and enable precompilation are also things that improve the general code quality of your package.
@@ -381,10 +382,10 @@ function Base.convert(::Type{MyType}, x::Any)
 ```
 @@
 
-Consider whether you _really_ gain anything from doing this.
-Do you really want to add a constructor to _all_ subtypes of `AbstractArray`, even those you don't know anything about, including their semantics and requirements?
+There is nothing wrong with defining highly polymorphic methods that take `Any`, but when writing methods, think about whether you are defining methods that are too broad _semantically_.
+
+For exampel, do you really want to add a constructor to _all_ subtypes of `AbstractArray`, even those you don't know anything about, including their semantics and requirements?
 Should you really allow _any_ type to be converted to `MyType`?
-There is nothing wrong with defining methods that take `Any`, but when writing methods, think about whether you define more than you can practically support.
 
 ### 3: Use SnoopPrecompile
 Add SnoopPrecompile as a dependency and execute a representative workload which execises the main functionality of your package in top-level scope of your package:
@@ -401,6 +402,9 @@ end
 
 In general, you want your workload to eventually end up calling all the functions you want to precompile.
 For advanced users, you can use `SnoopCompile` to determine which methods are compiled at runtime and therefore perhaps should be part of the workload - but as a package author, you probably have a pretty good idea about the main functionality of your own package.
+
+Adding a SnoopCompile workload is the only latency-reducing measure you need to take which is specifically latency-reducing, and does not improve the overall code quality.
+Luckily, it's quick and easy to do.
 
 ### 4: Write inferable code
 Get in the habit of writing inferable code. Use `@code_warntype` to check your code is type stable and Cthulhu.jl to debug complex type inference issues (though that is rarely necessary).
@@ -419,21 +423,23 @@ It's common to see packages take on dependencies for trivial tasks.
 Ask yourself if you really need them - remember that dependencies not only add latency, they are also a source of potential bugs and upgrade deadlock.
 
 You also see packages add dependencies, not because they need them, but simply to allow interoperability with them.
-For example, I can make a package that defines `my_function`. The package does not depend on the popular `OtherType` type from OtherPackage.jl, but for users who _do_ use OtherPackage, it's convenient to have defined `my_function(::OtherType).`
+For example, suppose I write a package that defines `my_function`.
+The package does not depend on the popular `OtherType` type from OtherPackage.jl, but for users who _do_ use OtherPackage.jl, it's convenient to have defined `my_function(::OtherType)`, so therefore I add OtherPackage.jl to my dependencies.
+This allows me to have this great new feature, but _all_ users, even those who do not care about interoperability with OtherPackage.jl now bears its latency.
 
 With Julia 1.9, it's possible to have modules that are conditionally loaded when specific packages are in your environment - so called "package extensions".
-Hence, you could define a package extension that defines `my_function(::OtherType)` ONLY when OtherPackage is loaded, but where OtherPackage is not a dependency of your package, and so users who do not need that method need not load OtherPackage.
+Hence, you could define a package extension that defines `my_function(::OtherType)` ONLY when OtherPackage is loaded, but where OtherPackage is not a dependency of your package.
 
 ## The future: Where is the latency heading?
 The immediate future is easy to predict, because the same things that has been happening for years will continue to happen:
-Some of the advances will be cancelled out by new compiler regressions due to fancy new compiler features.
+Some of the exciting recent advances will be cancelled out by new compiler regressions due to fancy new compiler features.
 We users will create still deeper code stacks that racks up latency, even more so with Julia 1.9 now that latency has improved and we can "afford" to do so.
 
 On the other hand, I'm also optimistic that Julia 1.9 may change some user behaviour for the better.
 In the old days, optimising your package for latency sometimes meant jumping through hoops to optimise for obscure compiler internals, all for limited gain.
 Now, latency can be reduced manyfold by simply implementing bog-standard code quality improvements and a SnoopPrecompile workload.
 Today, you also have tooling like JET.jl, Aqua.jl and the VSCode profiler to make it easier.
-This both lowers the barrier to, and increases the incentive to write inferable, precompilable packages, compared to just a year ago.
+This both lowers the barrier to, and increases the incentive to write inferable, precompilable packages, compared to just a few years ago.
 I'm hopeful that more package authors will adopt these practises, and the resulting improvements to latency will propagate through the ecosystem.
 
 However, there are also more work to do on the Julia development side, which will presumably happen slowly over the next several years:
@@ -448,7 +454,7 @@ Hence, while the total DataFrames workload latency decreased from 9 to 3 seconds
 For the JuliaFormatter workload, loading time actually increased by 50% from 0.4 to 0.6 seconds, even as total latency dropped from 11 to 0.9 seconds, such that loading went from 1/25th of the latency to 2/3rds!
 
 With most attention so far having been put on compilation, not loading, there are presumably some low-hanging fruits in code loading, and it's an obvious next target for latency improvements.
-The Julia devs are pretty confident that code loading itself can be made faster, and I'm guessing it will be improved significantly "soon" - so, probably, over the next releases, 1.10 or 1.11.
+The Julia devs are pretty confident that code loading itself can be made faster than it already is in v1.9, and I'm guessing it will be improved significantly "soon" - so, probably, over the next releases, 1.10 or 1.11.
 
 #### Parallel compilation
 Julia's compiler is mostly single-threaded, although select parts of it, such as precompilation, happen in parallel.
@@ -482,3 +488,22 @@ LLVM has functionality for this "compile on demand", and Prem Chintalapudi is wo
 More speculatively, the developers have talked about executing Julia using an interpreter, then compiling the same code in a background thread, and switching execution from the interpreted version to the compiled version when the compiled version is done.
 
 This is a highly speculative optimisation, and as far as I know, no actual work has been done in this area so far, so if this optimisation ever lands, it will take many years.
+
+
+#### More tooling improvements?
+This is sort of a joker, because tooling to allow developers to reduce latency has already improved quite a lot, and it's difficult as a user to put my finger on _exactly what_ kind of tooling I'd like to see getting build.
+Nonetheless, I feel strongly that there could exist better tooling which would guide developers more easily towards writing low-latency code.
+This is a common user experience for all software: Users can easily tell that something isn't quite as nice as it could be, but can't articulate what it should be instead.
+Nonetheless, let me try:
+
+1. It is currently still too difficult to automatically diagnose type piracy.
+   Ideally, a package like Aqua should detect all instances of type piracy, and for each instance, explicitly tell you in which package the function and each argument is defined.
+   Even more ideally, a piracy check should be an automatic part of the language server, such that your IDE will put a fat, red line under a method definition if it's a pirate.
+2. While JET.jl makes it easy to detect inference problems, the output is not provided in a way that is particularly actionable:
+   It does not display the call chain that leads to uninferability with all types, such that you can easily identify the function call where type information is lost, it does not flag abstractly typed containers, and there are still too many "false positives" from places like Base where users can't do anything about them.
+   This is particularly true when you run `@report_opt` on a large, type unstable code base.
+
+[^1]: Famously, this used to _not_ work in Julia back before I learned the language: If a method was redefined (or even if a new, more applicable method was defined), any callers would not get updated, and would simply return the wrong answer. This was tracked in [issue 265](https://github.com/JuliaLang/julia/issues/265), possibly the most infamous issue ever in Julia, and solved five years later, in [PR 17057](https://github.com/JuliaLang/julia/pull/17057) for Julia 0.6.
+
+[^2]: This is closely analogous to type piracy, but note that type piracy is about _defining_ methods for foreign functions using foreign types, whereas "external codeinstances" (i.e. foreign methodinstances) are created when you simply _call_ methods with such function signatures. Creating such foreign methodinstances is completely legitimate and must be expected in most packages.
+
