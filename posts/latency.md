@@ -126,7 +126,7 @@ Julians have coined the term  _type piracy_ for this nasty behaviour, and it is 
 An author may extend functions they defined themselves with new methods, or they may extend other people's functions with methods whose signature contain types they defined themselves.
 But defining a method for a function in someone else's code, using only someone else's types is frowned upon as "type piracy".
 
-Incendentally, this is analogous to Rust's "orphan rule" - except that Rust's compiler makes it _impossible_ to break the orphan rule, whereas in Julia, we acknowledge that it may occationally be convenient to commit type piracy (say, between two packages under the same project), and so we merely advise you against doing it.
+Incidentally, this is analogous to Rust's "orphan rule" - except that Rust's compiler makes it _impossible_ to break the orphan rule, whereas in Julia, we acknowledge that it may occasionally be convenient to commit type piracy (say, between two packages under the same project), and so we merely advise you against doing it.
 
 Type piracy can lead to massive cache invalidations, but it's fortunately rare, so it does not account for the large-scale invalidations prior to Julia 1.5.
 To understand _those_, we have to look at how Julia deals with _uninferable code_, that is, code where the compiler doesn't know the types of all variables.
@@ -209,7 +209,7 @@ end
 
 And here we come to the crux of the matter:
 Uninferable code is vulnerable to being invalidated _simply by defining new methods_.
-When loading pacakges, with hundreds of new method definitions, [thousands of methodinstances may be invalidated](https://julialang.org/blog/2020/08/invalidations/#how_common_is_method_invalidation), each of which must be re-compiled.
+When loading packages, with hundreds of new method definitions, [thousands of methodinstances may be invalidated](https://julialang.org/blog/2020/08/invalidations/#how_common_is_method_invalidation), each of which must be re-compiled.
 The very optimisations that the compiler uses to regain performance when running poorly inferred code are the same causing large scale cache invalidations and blocking any improvements to Julia's code caching.
 
 ### Reducing invalidations: v1.5 - v1.7
@@ -218,7 +218,7 @@ A major goal, therefore of Julia 1.5 and 1.6, was to reduce the amount of code c
 A big part of the effort went into developing tooling to measure Julia's compiler in order to gain a better understanding of the details of the problem: The packages [SnoopCompile.jl](https://github.com/timholy/SnoopCompile.jl), [MethodAnalysis.jl](https://github.com/timholy/MethodAnalysis.jl), [Cthulhu.jl](https://github.com/JuliaDebug/Cthulhu.jl) and [JET.jl](https://github.com/aviatesk/JET.jl) were all created, or received much attention, during this period.
 
 The compiler itself was also improved to reduce invalidations: [PR 36733](https://github.com/JuliaLang/julia/pull/36733) refined the invalidation algorithm, thereby exempting some methods that didn't need invalidation from being so.
-PRs [36208](https://github.com/JuliaLang/julia/pull/36208) and [35904](https://github.com/JuliaLang/julia/pull/36904) limited the aggressiveness of the optimisations that tries to regain performance from poorly-inferred code, which, as we saw above, could lead to invalidations.
+PRs [36208](https://github.com/JuliaLang/julia/pull/36208) and [35904](https://github.com/JuliaLang/julia/pull/35904) limited the aggressiveness of the optimisations that tries to regain performance from poorly-inferred code, which, as we saw above, could lead to invalidations.
 
 However, most of the improvements between Julia 1.5-1.7, came from simply fixing uninferable code in Base Julia - all packages rely on Base, so invalidations of Base code had by far the worst impact on latency.
 Among other people, Tim Holy made a flurry of PRs between Julia 1.5 and 1.7 to improve inference of Base.
@@ -230,7 +230,7 @@ The reduction of invalidations between v1.5 and 1.7 directly improved latency, b
 
 ### SnoopPrecompile.jl: v1.8
 One major problem with precompiling code during package installation time is that all Julia methods are generic over all their arguments.
-Hence, if I create a package where I define a method `foo(a, b, c)`, there is no way for the compiler to know which methodinstance(s) I would want to compile from the method.
+Hence, if I create a package where I define a method `foo(a, b, c)`, there is no way for the compiler, only based on the method definition, to know which methodinstance(s) I would want to compile from the method.
 
 Before v1.8, package authors could add precompilation statements of the form:
 
@@ -272,7 +272,7 @@ The combination of this PR with SnoopPrecompile made precompilation far more wid
 ### Package images: v1.9
 Another major issue with precompilation was that only a small part of the whole compilation pipeline could be precompiled.
 Briefly, Julia's compiler process code in several steps:
-* First, Julia source code is lowered to... well, lowered code, the highest level of Julia IR, with a fairly straightforward correspondance to source code.
+* First, Julia source code is lowered to... well, lowered code, the highest level of Julia IR, with a fairly straightforward correspondence to source code.
   This always happens at precompile time to all source code, such that raw source code is never loaded from disk.
 * Then, type inference is run on the lowered code.
   This is the step that requires monomorphization, and therefore a precompile statement (or a SnoopPrecompile block) in order to determine the concrete methodinstances to compile.
@@ -291,9 +291,9 @@ The last major step in the long process of improving code caching was complete.
 In 1.6, precompilation was parallelised.
 This only sped up package installation time (which I do not consider "latency" in this article), but in doing so incentivized developers to move more work to precompile time, so is worth mentioning.
 
-[PR 43852](https://github.com/JuliaLang/julia/pull/43852) and many follow-up PRs upgraded the compiler's reasoning abo    ut side effects from Julia 1.8 onwards, allowing the compiler to use the faster constant evaluation instead of constant folding/propagation.
+[PR 43852](https://github.com/JuliaLang/julia/pull/43852) and many follow-up PRs upgraded the compiler's reasoning about side effects from Julia 1.8 onwards, allowing the compiler to use the faster constant evaluation instead of constant folding/propagation.
 
-[PR 45276](https://github.com/JuliaLang/julia/pull/45276) in Julia 1.9 makes the compiler scale better with the length of functions. This only really matters for packages that uses huge functions, typically programatically generated functions.
+[PR 45276](https://github.com/JuliaLang/julia/pull/45276) in Julia 1.9 makes the compiler scale better with the length of functions. This only really matters for packages that uses huge functions, typically programmatically generated functions.
 
 [PR 47695](https://github.com/JuliaLang/julia/pull/47695) in Julia 1.9 added _package extensions_, which allow users to extend code from other packages without having them as dependencies.
 It is still to early to tell the impact of this PR, but it could potentially significantly lower the number of dependencies of packages throughout the ecosystem, thereby indirectly lower latency.
@@ -359,7 +359,7 @@ Hence, as a package author, you should see it less as "fiddling with your code t
 In fact, I've come to believe that _most packages should not optimise latency directly_, and huge strides can be made if package authors simply follow a few guidelines about general code quality:
 
 ### 1: Do not commit type piracy
-Don't get in the habit of comitting type piracy.
+Don't get in the habit of committing type piracy.
 Not only for latency reasons, mainly because redefining other people's code is terrible practice and leads to correctness issues.
 If you feel type piracy is necessary, it typically means you need to refactor your packages, or need to make a PR upstream to one of your dependencies.
 
@@ -387,11 +387,11 @@ function Base.convert(::Type{MyType}, x::Any)
 
 There is nothing wrong with defining highly polymorphic methods that take `Any`, but when writing methods, think about whether you are defining methods that are too broad _semantically_.
 
-For exampel, do you really want to add a constructor to _all_ subtypes of `AbstractArray`, even those you don't know anything about, including their semantics and requirements?
+For example, do you really want to add a constructor to _all_ subtypes of `AbstractArray`, even those you don't know anything about, including their semantics and requirements?
 Should you really allow _any_ type to be converted to `MyType`?
 
 ### 3: Use SnoopPrecompile
-Add SnoopPrecompile as a dependency and execute a representative workload which execises the main functionality of your package in top-level scope of your package:
+Add SnoopPrecompile as a dependency and execute a representative workload which exercises the main functionality of your package in top-level scope of your package:
 
 @@juliacode
 ```julia
@@ -411,7 +411,7 @@ Luckily, it's quick and easy to do.
 
 ### 4: Write inferable code
 Get in the habit of writing inferable code.
-If you're uncertain if, or why, a function is uninferable, use `@code_warntype`, or, preferably, the more featueful `@descend` from Cthulhu.jl's to investigate.
+If you're uncertain if, or why, a function is uninferable, use `@code_warntype`, or, preferably, the more featureful `@descend` from Cthulhu.jl's to investigate.
 Inferable code is faster at runtime - also after compilation - it is more debuggable, behaves more predictable and can be analysed statically.
 Don't worry - writing inferable code by default quickly becomes a habit.
 In fact, I would argue that building the habit of writing inferable code makes you a better programmer.
@@ -474,7 +474,7 @@ Indeed, there is nothing _fundamental_ in Julia preventing this - it simply hasn
 There has already been some foundational work to enable this.
 [PR 41936](https://github.com/JuliaLang/julia/pull/41936) allowed separating the codegen part from the Julia runtime, allowing you to start run Julia without the compiler.
 The Julia devs have also hinted that more foundational work is happening.
-The package [StaticCompiler.jl](https://github.com/tshort/StaticCompiler.jl) already now is able to produce small executables from Julia code - but it is experiemental and brittle at this stage.
+The package [StaticCompiler.jl](https://github.com/tshort/StaticCompiler.jl) already now is able to produce small executables from Julia code - but it is experimental and brittle at this stage.
 
 I'm not aware of any concrete plans to implement this, so I think it's safe to assume this is still very hypothetical, and probably won't happen for the next several years.
 I certainly wouldn't hold my breath waiting for it.
