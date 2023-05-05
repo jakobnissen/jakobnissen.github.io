@@ -2,7 +2,7 @@
 @def rss_pubdate = Dates.Date(2023, 03, 31)
 
 # Julia's latency: Past, present and future
-_Written 2023-03-31_
+_Written 2023-03-31, updated 2023-05-05_
 
 One of the most annoying features of Julia is its _latency_: The laggy unresponsiveness of Julia after starting up and loading packages.
 
@@ -228,7 +228,7 @@ In the words of Tim Holy, the invalidations we hunt now are like geckos, compare
 
 The reduction of invalidations between v1.5 and 1.7 directly improved latency, but perhaps more importantly paved the way for improving precompilation. 
 
-### SnoopPrecompile.jl: v1.8
+### PrecompileTools.jl: v1.8
 One major problem with precompiling code during package installation time is that all Julia methods are generic over all their arguments.
 Hence, if I create a package where I define a method `foo(a, b, c)`, there is no way for the compiler, only based on the method definition, to know which methodinstance(s) I would want to compile from the method.
 
@@ -240,16 +240,16 @@ precompile(foo, (MyType, Int, String))
 
 to cache the methodinstance `foo(::MyType, ::Int, ::String)`.
 Unfortunately, creating these statements and copy-pasting them into your code were a pain in the butt, and so very few package authors bothered to do so.
-This changed with Julia 1.8, when the package [SnoopPrecompile.jl](https://github.com/timholy/SnoopCompile.jl) was released.
-With it, authors simply need to create a block of code, that uses functionality from the package, and wrap it in a `@precompile_all_calls` macro.
-When running the macro, `SnoopPrecompile` will record all methods being compiled during execution of the code, and automatically emit precompilation statements for these during package installation time.
-Even cooler, this _only_ happens during package installation: During normal package loading, the entire SnoopPrecompile codeblock will be compiled to a no-op, thus contributing minimally to latency itself.
+This changed with Julia 1.8, when the package [PrecompileTools.jl](https://github.com/JuliaLang/PrecompileTools.jl) (originally called [SnoopPrecompile.jl](https://github.com/timholy/SnoopCompile.jl)) was released.
+With it, authors simply need to create a block of code, that uses functionality from the package, and wrap it in a `@compile_workload` macro.
+When running the macro, PrecompileTools will record all methods being compiled during execution of the code, and automatically emit precompilation statements for these during package installation time.
+Even cooler, this _only_ happens during package installation: During normal package loading, the entire PrecompileTools codeblock will be compiled to a no-op, thus contributing minimally to latency itself.
 
 For example, a user could add this to their package:
 
 @@juliacode
 ```julia
-@precompile_all_calls begin
+@compile_workload begin
     subjects = load_data("test/file.csv")
     results = full_analysis(subjects)
     [ more statement ]
@@ -258,8 +258,8 @@ end
 @@
 
 and all functions called by any function inside the block would be precompiled.
-This way, SnoopPrecompile made precompilation so easy that any package author who cares about latency can precompile much of their code.
-As of April 2023, SnoopPrecompile has 148 direct dependents, a number that I very much hope will continue to grow in the future.
+This way, PrecompileTools made precompilation so easy that any package author who cares about latency can precompile much of their code.
+As of April 2023, PrecompileTools has 148 direct dependents, a number that I very much hope will continue to grow in the future.
 
 ### Caching external codeinstances: v1.8
 Before Julia 1.8, a large fraction of methodinstances could not be compiled, even if precompile statements were generated for them. The reason was that packages could only save code that "belonged" to the package itself, i.e. methodinstances for which either the function, or one of the arguments were defined in the package.
@@ -267,7 +267,7 @@ If package A imported function `f` from package X and type `T` from package Y, t
 
 [PR 43990](https://github.com/JuliaLang/julia/pull/43990) enabled packages to also cache "external codeinstances", namely code defined in other packages.
 This, in theory, enabled caching of essentially all function calls.
-The combination of this PR with SnoopPrecompile made precompilation far more widespread and was the reason for the observed drop in latency many packages experienced from Julia 1.7 to Julia 1.8.
+The combination of this PR with PrecompileTools made precompilation far more widespread and was the reason for the observed drop in latency many packages experienced from Julia 1.7 to Julia 1.8.
 
 ### Package images: v1.9
 Another major issue with precompilation was that only a small part of the whole compilation pipeline could be precompiled.
@@ -275,7 +275,7 @@ Briefly, Julia's compiler process code in several steps:
 * First, Julia source code is lowered to... well, lowered code, the highest level of Julia IR, with a fairly straightforward correspondence to source code.
   This always happens at precompile time to all source code, such that raw source code is never loaded from disk.
 * Then, type inference is run on the lowered code.
-  This is the step that requires monomorphization, and therefore a precompile statement (or a SnoopPrecompile block) in order to determine the concrete methodinstances to compile.
+  This is the step that requires monomorphization, and therefore a precompile statement (or a PrecompileTools block) in order to determine the concrete methodinstances to compile.
 * Third, Julia's front-end compiler will optimise the lowered code using the usual compiler tricks such as inlining, loop hoisting etc into fairly low-level Julia-like code.
   With the changes in v1.8, practically all code up to and including this level could be cached.
 * Finally, Julia emits LLVM code from its IR, and calls into LLVM to produce machine code from that.
@@ -390,12 +390,12 @@ There is nothing wrong with defining highly polymorphic methods that take `Any`,
 For example, do you really want to add a constructor to _all_ subtypes of `AbstractArray`, even those you don't know anything about, including their semantics and requirements?
 Should you really allow _any_ type to be converted to `MyType`?
 
-### 3: Use SnoopPrecompile
-Add SnoopPrecompile as a dependency and execute a representative workload which exercises the main functionality of your package in top-level scope of your package:
+### 3: Use PrecompileTools
+Add PrecompileTools as a dependency and execute a representative workload which exercises the main functionality of your package in top-level scope of your package:
 
 @@juliacode
 ```julia
-@precompile_all_calls begin
+@compile_workload begin
     x = MyHugeType("abc")
     modify!(x)
     [ ... ]
@@ -404,9 +404,9 @@ end
 @@
 
 In general, you want your workload to eventually end up calling all the functions you want to precompile.
-For advanced users, you can use `SnoopCompile` to determine which methods are compiled at runtime and therefore perhaps should be part of the workload - but as a package author, you probably have a pretty good idea about the main functionality of your own package.
+For advanced users, you can use SnoopCompile.jl to determine which methods are compiled at runtime and therefore perhaps should be part of the workload - but as a package author, you probably have a pretty good idea about the main functionality of your own package.
 
-Adding a SnoopCompile workload is the only latency-reducing measure you need to take which is specifically latency-reducing, and does not improve the overall code quality.
+Adding a PrecompileTools workload is the only latency-reducing measure you need to take which is specifically latency-reducing, and does not improve the overall code quality.
 Luckily, it's quick and easy to do.
 
 ### 4: Write inferable code
@@ -417,7 +417,7 @@ Don't worry - writing inferable code by default quickly becomes a habit.
 In fact, I would argue that building the habit of writing inferable code makes you a better programmer.
 
 If you have a larger codebase which is uninferable, you can use VSCode's profiler to profile a workload and detect all calls where dynamic dispatch happens.
-Alternatively, you can use JET.jl on your SnoopPrecompile workload to detect dynamic dispatch in your code and fix it.
+Alternatively, you can use JET.jl on your PrecompileTools workload to detect dynamic dispatch in your code and fix it.
 
 Strive to have near zero dynamic dispatch for your workload - usually, writing idiomatic Julia code will be enough to do that.
 For tasks that are inherently type unstable, like parsing JSON, you can add typeasserts to limit the scope of type instability.
@@ -441,7 +441,7 @@ We users will create still deeper code stacks that racks up latency, even more s
 
 On the other hand, I'm also optimistic that Julia 1.9 may change some user behaviour for the better.
 In the old days, optimising your package for latency sometimes meant jumping through hoops to optimise for obscure compiler internals, all for limited gain.
-Now, latency can be reduced manyfold by simply implementing bog-standard code quality improvements and a SnoopPrecompile workload.
+Now, latency can be reduced manyfold by simply implementing bog-standard code quality improvements and a PrecompileTools workload.
 Today, you also have tooling like JET.jl, Aqua.jl and the VSCode profiler to make it easier.
 This both lowers the barrier to, and increases the incentive to write inferable, precompilable packages, compared to just a few years ago.
 I'm hopeful that more package authors will adopt these practises, and the resulting improvements to latency will propagate through the ecosystem.
