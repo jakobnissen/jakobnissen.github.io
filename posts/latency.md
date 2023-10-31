@@ -366,31 +366,35 @@ If you feel type piracy is necessary, it typically means you need to refactor yo
 The package Aqua.jl (Automatic QUality Assurance of packages) can statically find piracy and can be integrated in your test suite and CI.
 In general, Aqua.jl includes a lot of nice functionality to make your package better.
 
-### 2: Avoid defining overly-broad methods
-It's common to see method definitions like:
+### 2: Write inferable code
+Get in the habit of writing inferable code.
+If you're uncertain if, or why, a function is uninferable, use `@code_warntype`, or, preferably, the more featureful `@descend` from Cthulhu.jl's to investigate.
+Inferable code is faster at runtime - also after compilation - it is more debuggable, behaves more predictable and can be analysed statically.
+Don't worry - writing inferable code by default quickly becomes a habit.
+In fact, I would argue that building the habit of writing inferable code makes you a better programmer.
 
-@@juliacode
-```julia
-function (::Type{T})(x::MyType) where {T <: AbstractArray}
-   [ ... ]
-```
-@@
+If you have a larger codebase which is uninferable, you can use VSCode's profiler to profile a workload and detect all calls where dynamic dispatch happens.
+Alternatively, you can use JET.jl on your PrecompileTools workload to detect dynamic dispatch in your code and fix it.
 
-or
+Strive to have near zero dynamic dispatch for your workload - usually, writing idiomatic Julia code will be enough to do that.
+For tasks that are inherently type unstable, like parsing JSON, you can add typeasserts to limit the scope of type instability.
 
-@@juliacode
-```julia
-function Base.convert(::Type{MyType}, x::Any)
-    [ ... ]
-```
-@@
+### 3: Remove unimportant dependencies
+It's common to see packages take on dependencies for trivial tasks.
+Ask yourself if you really need them - remember that dependencies not only add latency, they are also a source of potential bugs, installation issues and upgrade deadlock.
 
-There is nothing wrong with defining highly polymorphic methods that take `Any`, but when writing methods, think about whether you are defining methods that are too broad _semantically_.
+You also see packages add dependencies, not because they need them, but simply to allow interoperability with them.
+For example, suppose I write a package that defines `my_function`.
+The package does not depend on the popular `OtherType` type from OtherPackage.jl, but for users who _do_ use OtherPackage.jl, it's convenient to have defined `my_function(::OtherType)`, so therefore I add OtherPackage.jl to my dependencies.
+This allows me to have this great new feature, but _all_ users, even those who do not care about interoperability with OtherPackage.jl now bears its latency.
 
-For example, do you really want to add a constructor to _all_ subtypes of `AbstractArray`, even those you don't know anything about, including their semantics and requirements?
-Should you really allow _any_ type to be converted to `MyType`?
+With Julia 1.9, it's possible to have modules that are conditionally loaded when specific packages are in your environment - so called "package extensions".
+Hence, you could define a package extension that defines `my_function(::OtherType)` ONLY when OtherPackage is loaded, but where OtherPackage is not a dependency of your package.
 
-### 3: Use PrecompileTools
+Finally, many packages include dependencies that are only used when developing or testing the package, such as `Test`, `BenchmarkTools` or `JuliaFormatter`.
+Don't make your users pay for the latency of loading these packages at runtime - add them in dedicated testing and development environments.
+
+### 4: Use PrecompileTools
 Add PrecompileTools as a dependency and execute a representative workload which exercises the main functionality of your package in top-level scope of your package:
 
 @@juliacode
@@ -408,31 +412,6 @@ For advanced users, you can use SnoopCompile.jl to determine which methods are c
 
 Adding a PrecompileTools workload is the only latency-reducing measure you need to take which is specifically latency-reducing, and does not improve the overall code quality.
 Luckily, it's quick and easy to do.
-
-### 4: Write inferable code
-Get in the habit of writing inferable code.
-If you're uncertain if, or why, a function is uninferable, use `@code_warntype`, or, preferably, the more featureful `@descend` from Cthulhu.jl's to investigate.
-Inferable code is faster at runtime - also after compilation - it is more debuggable, behaves more predictable and can be analysed statically.
-Don't worry - writing inferable code by default quickly becomes a habit.
-In fact, I would argue that building the habit of writing inferable code makes you a better programmer.
-
-If you have a larger codebase which is uninferable, you can use VSCode's profiler to profile a workload and detect all calls where dynamic dispatch happens.
-Alternatively, you can use JET.jl on your PrecompileTools workload to detect dynamic dispatch in your code and fix it.
-
-Strive to have near zero dynamic dispatch for your workload - usually, writing idiomatic Julia code will be enough to do that.
-For tasks that are inherently type unstable, like parsing JSON, you can add typeasserts to limit the scope of type instability.
-
-### 5: Remove unimportant dependencies
-It's common to see packages take on dependencies for trivial tasks.
-Ask yourself if you really need them - remember that dependencies not only add latency, they are also a source of potential bugs and upgrade deadlock.
-
-You also see packages add dependencies, not because they need them, but simply to allow interoperability with them.
-For example, suppose I write a package that defines `my_function`.
-The package does not depend on the popular `OtherType` type from OtherPackage.jl, but for users who _do_ use OtherPackage.jl, it's convenient to have defined `my_function(::OtherType)`, so therefore I add OtherPackage.jl to my dependencies.
-This allows me to have this great new feature, but _all_ users, even those who do not care about interoperability with OtherPackage.jl now bears its latency.
-
-With Julia 1.9, it's possible to have modules that are conditionally loaded when specific packages are in your environment - so called "package extensions".
-Hence, you could define a package extension that defines `my_function(::OtherType)` ONLY when OtherPackage is loaded, but where OtherPackage is not a dependency of your package.
 
 ## The future: Where is the latency heading?
 The immediate future is easy to predict, because the same things that has been happening for years will continue to happen:
