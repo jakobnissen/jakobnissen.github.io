@@ -1,8 +1,8 @@
 @def rss = "A look at a Mojo benchmark for bioinformatics, and Mojo in general."
-@def rss_pubdate = Dates.Date(2024, 02, 10)
+@def rss_pubdate = Dates.Date(2024, 02, 09)
 
 # A look at the Mojo language for bioinformatics
-_Written 2024-02-10_
+_Written 2024-02-09_
 
 A few days ago, [a blog post](https://www.modular.com/blog/outperforming-rust-benchmarks-with-mojo)
 was posted on the website of [Modular](https://www.modular.com/blog/outperforming-rust-benchmarks-with-mojo),
@@ -88,10 +88,10 @@ Presumably, Mojo's interop is going to be even easier. But is the improved inter
 On that point, I don't really buy the idea that Mojo benefits terribly much from being "Pythonic" - which presumably means that its syntax is inspired by Python.
 What's the claim here, really? That it'd be _too hard_ for people to learn the superficial syntax of a new language, while it'd simultaneously be _easy_ for people to learn about function monomorphization, copy- vs borrow semantics, compiler directives and much more?
 
-The main intended application of Mojo appears to be deep learning, which has typically struggled with the same 'two-language problem' as bioinformatics, since models are prototyped in Python but all the tensor operations are kernels written in C++ or CUDA.
-It's not clear to me how Mojo is going to change the game there, though. It doesn't seem like Mojo can replace a framework like PyTorch, as that's a different level of the stack entirely.
+The main intended application of Mojo appears to be deep learning, which has struggled with the same 'two-language problem' as bioinformatics, since models are prototyped in Python but all the tensor operations are written in C++ or CUDA.
+It's not clear to me how Mojo is going to change the game there, though. It doesn't seem like Mojo can replace a framework like PyTorch, since those are at entirely different levels of the stack.
 Can it integrate into PyTorch, such that tensor gradients are preserved across Mojo functions? That would allow users to keep using PyTorch while implementing a single custom kernel in Mojo. But it's seems unlikely Mojo is compatible with PyTorch's C++ interface.
-Perhaps Mojo is aimed at being a language suitable for developing new, future frameworks from scratch when people are ready to ditch the existing Python ecosystem? But if that's the goal, you might as well ditch Python entirely and alls its 35-year old baggae and come to Julia and get a clearner start.
+Perhaps Mojo is aimed at being a language suitable for developing new, future frameworks from scratch when people are ready to ditch the existing Python ecosystem? But if that's the goal, you might as well ditch Python entirely and all its 35-year old baggage and come to Julia for a clean start.
 
 Let me also say some nice things about Mojo.
 
@@ -106,10 +106,10 @@ Before we get back to the benchmark, we need to understand _why_ the work done i
 Most people know that biological inheritance is controlled by DNA[^2].
 DNA is a linear polymer  molecule of consisting of _nucleotides_ stringed together in a chain, with each nucleotide containing one of four distinct _bases_ which are abbreviated A, C, G or T. A DNA molecule can therefore be faithfully represented by a sequence of symbols, e.g. a string such as `TAGGCTATGCC`. Thus, DNA is a type of _digital_ storage that controls much of how living organisms are built and how we behave. Reading the sequence of a physical sample containing DNA molecules is called _sequencing_, and is done by machines called  _sequencers_.
 
-Incidentally, the applicability of the field of bioinformatics stem from these facts: 1. That much of molecular biology can be explained by the polymer molecule DNA (and RNA and protein), 2. That these polymers are easily and faithfully represented in a computer, and 3. That it's possible to construct sequencers which can computerize massive amounts of DNA cheaply. I don't biochemistry on Earth _had_ to be this amenable to analysis, and we're very lucky that it happened to be so.
+Incidentally, the applicability of the field of bioinformatics stem from these facts: 1. That much of molecular biology can be explained by the polymer molecule DNA (and RNA and protein), 2. That these polymers are easily and faithfully represented in a computer, and 3. That it's possible to construct sequencers which can computerize massive amounts of these polymers cheaply. Biochemistry on Earth didn't _have_ to be this amenable to analysis, and we're very lucky that it happened to be so.
 
-There are different competing sequencers with different characteristics, but let's focus on the machines produced by the company Illumina, which currently dominate the market with around 80% share.
-Illumina sequencers uses a chemical reaction to read DNA linearly from one end of the molecule. The output of reading one molecule of DNA is termed a _read_. Due to imperfections in the chemistry, the chemical reaction deterioates to unreadability after around 150 bases, putting an upper limit on read length which is far too low to sequence full DNA molecules, which in humans are on the order of 100 million bases (100 Mbp) in length.
+There are different competing sequencers with different characteristics, but let's focus on the machines produced by the company Illumina, which currently dominate with around 80% market share.
+Illumina sequencers uses a chemical reaction to read DNA linearly from one end of the molecule. The output of reading one molecule of DNA is termed a _read_. Due to imperfections in the chemistry, the chemical reaction deteriorates to unreadability after around 150 bases, putting an upper limit on read length that is far too low to sequence full DNA molecules, which in humans are on the order of 100 million bases (100 Mbp) in length.
 To overcome this limitation, the DNA is broken apart to smaller fragments of around 500 bp, e.g. using ultrasound, and tens of millions of these fragments are then sequenced in parallel. Because we expect the sample to contain many near-identical DNA molecules that are fragmented independently and randomly, we can reconstruct the entire original sequence by merging partially overlapping reads, if only we sequence sufficiently many reads from each sample to ensure uniform coverage of the original sequence.
 
 The number of reads is typically expressed in _depth of coverage_ (or just _depth_), which is the average number of times each position in the original DNA molecule is present across all sequenced reads. A typical experiment might target ~2 % of the human genome's total size of 3 Gbp and aim for a depth of 100x, producing around 5 Gbp of data. With a read length of 150 bp, this is around 35 million reads.
@@ -125,17 +125,17 @@ defegg___adefbdhfdadbeffffggfgggaeaf_cffga\_a_babbZbbXdddT_\c_cccca_TbBBBBBBBBBB
 ```
 
 That is:
-* A read is always composed of four lines
-* The top line starts with `@` and contain an unique identifier of the read. It has no other restrictions. In the example read above, the name encodes a bunch of metadata about where the read originated.
-* The next line contain the DNA sequence
-* The third line starts with a `+` and then may optionally repeat the same string as after the `@`
+* A read is always composed of four lines.
+* The top line starts with `@` and contain a unique identifier of the read. It has no other restrictions. In the example read above, the name encodes a bunch of metadata about where the read originated.
+* The next line contain the DNA sequence.
+* The third line starts with a `+` and then may optionally repeat the same string as after the `@` on the first line
 * The fourth header line contains the quality. This line must be the same length as the DNA sequence. It gives the estimated probability that the given DNA nucleotide is wrong. There are different encoding schemes, but by far the most common is Phred+33, where the error probability is:
 
 $$p = 10^\frac{33 - c}{10}$$
 
 Where $c$ is the ASCII value of the symbol in the quality line.
 
-A FASTQ file is then simply the concatenation of mutliple reads like the one above.
+A FASTQ file is then simply the concatenation of multiple reads like the one above.
 Since a research project may contain terabytes of FASTQ files, having a fast parser is important.
 
 ## The FASTQ benchmark
@@ -176,7 +176,7 @@ fn parse_all(inout self) raises:
             break
 ```
 
-The `fill_buffer` function seeks to the right location in the underlying file, then fills the internal buffer of `FastParser`. Either that or `self.check_EOF` can raise a (nonspecific) `Error` on EOF, which breaks the loop in `parse_all`.
+The `fill_buffer` function seeks to the right location in the underlying file, then fills the internal buffer of `FastParser`. Either that or `self.check_EOF` can raise a (non-specific) `Error` on EOF, which breaks the loop in `parse_all`.
 
 I'm not crazy about the mandatory seeking of `fill_buffer`. This happens if there are extra unused bytes in the buffer. Instead of copying them to the beginning of the buffer, the reader rewinds the underlying stream and simply re-reads the bytes from the stream - but what if the parser wraps a non-seekable stream? In any case that's not important - it could probably be solved with almost no performance cost.
 
@@ -277,7 +277,7 @@ That's achieved through parsing the file with a state machine, which can therefo
 On one side of the argument, one could say it's nice to provide as much validation as possible - suppose someone reads in a FASTQ file with non-ASCII sequences using Needletail, and the parser wrongly claims the seq and quality lines have a different number of symbols because they are encoded in a different number of bytes. That error is no good and will leave the user scratching their heads when they count the sequence and quality lengths and verifies that they match.
 Wouldn't it be nicer to instead have the parser check that the input is ASCII?
 
-Also in that favor - when do we ever need to parse files at 3 GB/s? What could we possibly _do_ to the files that will be anywhere near that speed? Surely dropping to 2 or even 1 GB/s will have essentially no impact on the overall speed of a real life analysis.
+Also in that favour - when do we ever need to parse files at 3 GB/s? What could we possibly _do_ to the files that will be anywhere near that speed? Surely dropping to 2 or even 1 GB/s will have essentially no impact on the overall speed of a real life analysis.
 
 The other side of the argument is that parsers should do as _little_ validation as possible. For example, my parser spends time checking that the first and third headers of FASTQ reads are identical, because the format says so.
 But what if a user has a record where they're not?
@@ -301,19 +301,19 @@ I think there is only one real conclusion here:
 Just kidding. I don't know why my implementation is faster - I don't strictly _know_ that it's even faster since I can't run Mojo on my own machine.
 Maybe it's the fact that my implementation doesn't seek the underlying file, or maybe 200 ms is fast enough that Python's startup time begin to matter. If I include the time for Julia to start up and compile the script, my implementation takes 354 ms total, on the same level as Mojo's.
 
-One interesting observation is that replacing the manual `memchr` implementation with a call to glibc's `memchr` slows it down by about 25%, depite glibc's `memchr` being around 70% faster when used on long haystacks. Julia's ccall has close to zero overhead, so I'm not sure what's up with that.
+One interesting observation is that replacing the manual `memchr` implementation with a call to glibc's `memchr` slows it down by about 25%, despite glibc's `memchr` being around 70% faster when used on long haystacks. Julia's ccall has close to zero overhead, so I'm not sure what's up with that.
 
 Maybe it's that `memchr` doesn't inline, whereas the manual implementation is forcefully inlined into `parse_read`. If so, this might explain most of the performance difference to Needletail. Removing the `@inline` directive from my Julia code slows it down about 20%.
-Instestingly, setting `lto = "thin"` and `codegen-units = 1` in my Cargo.toml file reduces the runtime of Needletail to 357 ms, matching Mojo's imputed runtime nearly exactly.
+Interestingly, setting `lto = "thin"` and `codegen-units = 1` in my Cargo.toml file reduces the runtime of Needletail to 357 ms, matching Mojo's imputed runtime nearly exactly.
 
 These differences are trivialities. I don't know why my Julia implementation is twice as fast as Needletail, but subtracting the lack of validation, I doubt it's something substantial.
-There are often real important reasons why some languages are faster than others - whether they provide good zero-cost abstractions for high-level data types, whether they provide good multithreading and SIMD support, how well they support generics and how well libraries compose together, how defensive vs adventorous they make programmers, and much else.
+There are often real important reasons why some languages are faster than others - whether they provide good zero-cost abstractions for high-level data types, whether they provide good multithreading and SIMD support, how well they support generics and how well libraries compose together, how defensive vs adventurous they make programmers, and much else.
 I don't think this Mojo implementation shows any of this.
 
 ## Closing thoughts
 I don't want to coldly dismiss the Mojo blog post. After all, its two main points are essentially right: That bioinformatics needs a language to bridge high-level and high-performance programming, and that Mojo is capable of producing fast code. I don't put too much value in the actual reported numbers in the benchmark, but they don't matter in the big picture.
 It's also feels a little like overkill to go to this length to tear apart a blog post from from a guy who is just excited about what Mojo could bring to bioinformatics.
-It's just his bad luck that there are people me out there - I'm a bioinformatician, passionate about high performance computing for science, maintain my own FASTQ parsing library, and is particularly sceptical about Mojo.
+It's just his bad luck that there are people like me out there - a bioinformatician who is passionate about high performance computing for science, maintain my own FASTQ parsing library, and is particularly sceptical about Mojo.
 
 Introspecting, I think I'm a little oversensitive to Mojo's marketing hype. Ostensibly because the original Mojo announcements (and also this Mojo blog post), made a lot of bold claims that could be construed as hyperbolic, while keeping the compiler to themselves, giving it the smell of vaporware. But if I'm being honest with myself, it's probably because I'm so invested in the prospect of Julia for bioinformatics.
 
@@ -328,9 +328,9 @@ When I talk to my colleagues, half of them have no interest in high performance 
 Because they're not programming language nerds like me, they will use the tools that are at hand, without caring about their technical merit. If more money is spent on sanding the edges off a technically worse solution, then they will stick with it until the end of time, and not demand something better.
 
 Does Mojo bring real value to the Python ecosystem? To me it's still too early to tell.
-I'm glad someone of the caliber of Chris Lattner is working on breaking the two-language barrier, but I wished he had joined forces with those who have been solving the problem the last decade in Julia-land.
+I'm glad someone of the calibre of Chris Lattner is working on breaking the two-language barrier, but I wished he had joined forces with those who have been solving the problem the last decade in Julia-land.
 
 [^1]: I've looked at commit 42ba5bc. The repository has been updated since, so the code listed in this blog post might be out of date by the time you read this.
 [^2]: I've found that when you mention that DNA is the basis of heritability, people will appear from thin air and argue about epigenetics. But I believe epigenetics is a rounding error compared to the DNA sequence when we talk about heritability and the medium of evolution. I don't doubt that e.g. chromatin accessibility is an important parameter in cells, but let's not conflate the biological state of a cell with a _heiritable signal_ which is stable enough to be acted on over evolutionary time.
-[^3]: Some programmers wonder why DNA is usually saved encoded in plaintext. Isn't that inefficient, considering the cost of storage for terabyte-sized DNA datasets? Nope. It's usually stored gzip-compressed at decompressed on the fly when used. DNA compresses well, and the plaintext format allows extra metadata to be written directly into the file, as well as being much easier to parse.
+[^3]: Some programmers wonder why DNA is usually saved encoded in plaintext. Isn't that inefficient, considering the cost of storage for terabyte-sized DNA datasets? Nope. It's usually stored gzip-compressed at decompressed on the fly when used. DNA compresses well, and the plaintext format allows extra metadata to be written directly into the file, as well as being much easier to parse. There are some more efficient formats, like CRAM, which are used in some large-scale projects, but in my subfield of microbial metagenomics, I can't recall ever having worked with a CRAM file.
 [^4]: Only partially the reason - Needletail has two more reasons it's faster. First, Rust's `memchr` crate used by Needletail is much more optimised than Julia's Automa.jl used by FASTX.jl, and Automa.jl probably can't be optimised to the same level because Julia doesn't support platform-specific SIMD code yet. Second, Rust's borrowchecker makes it safe for Needletail to return a view into the active file buffer. This would be totally reckless in Julia, so we need to copy the bytes out to a separate buffer first (we actually need to do _two copies_ of each byte, since Julia's IO is buffered by default, using an inaccessible buffer).
