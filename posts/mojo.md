@@ -330,6 +330,80 @@ Because they're not programming language nerds like me, they will use the tools 
 Does Mojo bring real value to the Python ecosystem? To me it's still too early to tell.
 I'm glad someone of the calibre of Chris Lattner is working on breaking the two-language barrier, but I wished he had joined forces with those who have been solving the problem the last decade in Julia-land.
 
+## Addendum
+_Added 2024-04-01_
+
+After its original publication, this post has made the rounds on various forums. In this part, I want to address some responses.
+
+### You claim the Mojo code doesn't do any validation, but it does.
+The commit I read was 42ba5bc. This commit didn't do any validation.
+
+While the `record_coord.mojo` did contain a `.validate(self, chunk)` method, this method was not called by the `FastParser.parse_all` function.
+This is the function mentioned in the README.md under the "Usage" section, as well as the function called in `main.mojo`.
+
+The benchmarking section said the following:
+
+> * The snippet provided in the \`\`\`needletail_test\`\`\` folder was compiled
+> [ content elided .... ]
+> * FASTQ record parsing, including header verification, tracking total nucleotide and record counts using the \`\`\`FastParser\`\`\` module.
+
+It's entirely possible that the original Mojo post used timings obtained from running `parser.next()` in a loop, which _does_ validate the records - the "Benchmarks" section does not say exactly _what function_ from the `FastParser` module was used.
+
+However, I feel it's unfair to blame me for looking at the published code and assuming that's the code that was being run.
+
+Also, note that the MojoFastTrim repo, and the Mojo blog post has been _changed_ since I wrote my post.
+The changes to the repo includes added validation to the `parse_all` function, and adding a new `benchmark` directory to make the benchmarking instructions clearer.
+The changes to the post include adding a link to the updated repo.
+
+At any rate, it's worth keeping in mind that:
+* Even with the `validate` function, the Mojo implementation does less validation than Needletail. For example, it doesn't handle file IO errors at all, or handle reads longer than the buffer, or handle Windows line endings.
+
+* However, Needletail doesn't do a ton of validation, either. For example, it doesn't check that the sequences and qualities are ASCII, which the code assumes. For example, this is an excerpt from the Needletail code, which where the check that is commented out is that the quality line must be bytes between `!` and `~`:
+
+```rust
+        // TODO: we don't do that every time because it's a ~90% performance penalty.
+        // TODO: mention it on the README
+        // And we can further validate quality chars
+        // and the vast majority of files don't have this issue
+        // let qual_len = self
+        //     .buf_pos
+        //     .qual(&buf)
+        //     .iter()
+        //     .filter(|c| *c >= &b'!' && *c <= &b'~')
+        //     .count();
+```
+
+* See the next section on how much overhead the `.validate` function incurs. It's not much.
+
+### A post about benchmarking, without running the Mojo code? Seriously?
+It's not necessary to run Mojo on my own machine to show that Mojo's speed is due to its implementation.
+This post 100% grants that Mojo's implementation is exactly as much faster than Needletail as is claimed on the MojoFastTrim repository.
+All I have to show is that I get at least as large an improvement over Needletail as they claim Mojo does, by implementing the same algorithm in Julia.
+
+> But that's a different machine! How can we know your Julia implementation is fast on machines in general?
+
+If it all comes down to which machine it's run on, I might as well claim that the Mojo post doesn't prove anything because it's not run on my machine. See how it works?
+
+At the _very least_, I've shown that the Mojo implementation is _insufficient evidence_ that the reason the Mojo implementation is fast is due to features unique to Mojo which Julia (or Rust) doesn't have.
+If it's really due to Mojo's groundbreaking compiler advances, why is my Julia implementation relatively faster compared to Needletail?
+
+But _fine._ I downloaded a VM and installed Julia and Mojo in it.
+Hmm, but what was the CLI for the Mojo program? Let's see:
+
+```
+$ ./fast_parser
+Segmentation fault (core dumped)
+```
+
+Fun fun fun. Anyway Here are my timings, all run in the same box on the later commit 38bb68:
+* My Julia code: 213 ms
+* The provided Mojo code with validation: 332 ms
+* The provided Mojo code without validation: 320 ms
+* Needletail + w. `lto` and `codegen_units=1`: 356 ms
+* Needletail: 471 ms
+
+So yeah, the point stands.
+
 [^1]: I've looked at commit 42ba5bc. The repository has been updated since, so the code listed in this blog post might be out of date by the time you read this.
 [^2]: I've found that when you mention that DNA is the basis of heritability, people will appear from thin air and argue about epigenetics. But I believe epigenetics is a rounding error compared to the DNA sequence when we talk about heritability and the medium of evolution. I don't doubt that e.g. chromatin accessibility is an important parameter in cells, but let's not conflate the biological state of a cell with a _heiritable signal_ which is stable enough to be acted on over evolutionary time.
 [^3]: Some programmers wonder why DNA is usually saved encoded in plaintext. Isn't that inefficient, considering the cost of storage for terabyte-sized DNA datasets? Nope. It's usually stored gzip-compressed at decompressed on the fly when used. DNA compresses well, and the plaintext format allows extra metadata to be written directly into the file, as well as being much easier to parse. There are some more efficient formats, like CRAM, which are used in some large-scale projects, but in my subfield of microbial metagenomics, I can't recall ever having worked with a CRAM file.
