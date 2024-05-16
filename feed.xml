@@ -46,6 +46,25 @@
 
 <item>
   <title>
+    <![CDATA[  You probably don&#39;t need to validate UTF-8 strings  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/utf8/index.html </link>
+  <guid> https://viralinstruction.com/posts/utf8/index.html </guid>
+  <description>
+    <![CDATA[  You probably don&#39;t need to validate UTF-8 strings  ]]>
+  </description>  
+    
+  <pubDate>Thu, 16 May 2024 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  A look at the Mojo language for bioinformatics  ]]>
   </title>
   <link> https://viralinstruction.com/posts/mojo/index.html </link>
