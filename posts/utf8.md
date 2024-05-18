@@ -4,7 +4,7 @@
 # You probably don't need to validate UTF-8 strings
 _Written 2024-05-16_
 
-Strings are important to all programmers, but to us bioinformaticians, they are an absolutely central.
+Strings are important to all programmers, but to us bioinformaticians, they are absolutely central.
 The layout of strings is just a slice of bytes in memory, so you'd think the string data type is not an interesting design space when designing a programming language - but you'd be wrong!
 In this post, I'll compare and contrast the design of strings in Rust and Julia.
 
@@ -35,8 +35,9 @@ Another issue is Julia's lack of a borrowchecker: If all data _can_ be mutated t
 In contrast, if the values of some types are always immutable, the compiler knows data of that type is immutable no matter who holds references to it.
 
 As always, immutability comes with a performance penalty: Mutating values is generally faster than creating new ones.
-This cause a problem when working with immutable types: For efficiency, we want to be able to mutate strings, but for the compiler to treat strings as immutable, we want to never be able to observe them being mutated.
-To solve this problem, Julia uses the following interesting pattern in its internals:[^2]
+This causes problems when working with immutable types: For efficiency, we want to be able to mutate strings instead of having to allocate new ones when we manipulate them.
+But, for the compiler to be able to treat strings as immutable, we need to guarantee that we can never observe strings being mutated.
+To solve this conflict and allow mutating data which is supposed to be immutable, Julia uses the following interesting pattern in its internals:[^2]
 
 @@juliacode
 ```julia
@@ -50,8 +51,8 @@ In this code:
 1. The internal function `Base._string_n(8)` creates a string with 8 bytes of uninitialized memory
 2. The `unsafe_wrap` calls returns a `Memory{UInt8}` view of the string.
    Because there are no longer any references to the string after creating `mem` and so the string cannot be observed, mutating `mem` is legal
-3. We mutate the memory, in this example using `copyto!`
-4. Finally, `String(mem)` creates a string from the memory. Mutating the memory after this call is illegal.
+3. We mutate the memory, in this example using `copyto!`. In real code, this mutation would write the actual content of the string.
+4. Finally, `String(mem)` creates a string from the memory. If `mem` is never referred to again in the program, the resulting string can never be observed to mutate.
 
 It's not exactly pretty.
 Perhaps a better design would expose `_string_n` as public, have `String(::Memory{UInt8})` copy, and introduce `unsafe_takestring(::Memory{UInt8})` to create zero-copy strings from memory.
@@ -98,7 +99,9 @@ However, I believe it consists of this data, stored on the heap, in order:
 3. A trailing null byte, for easier C interop
 
 In Julia, it's passed around as a single pointer to this heap data.
-Besides the most basic functionality such as instantiating strings, and getting the number of bytes in the string and a pointer to its content, essentially all operations on strings are defined in Julia code.
+
+Besides just a handful of the most basic functionality such as instantiating strings, and getting the number of bytes in the string and a pointer to its content, all methods of strings are defined as ordinary Julia functions.
+So, while the `String` type itself is opaque in Julia, luckily nearly all string functions are visible using Julia's introspection.
 
 ## Indexing into strings
 In both Rust and Julia, you can slice into strings to get a substring. For example, here, in Julia:
@@ -126,7 +129,7 @@ Rust and Julia differ in that Julia allows indexing with a scalar to produce a `
 This, too, will fail if the index provided is not the first byte index of a `Char` in the string.
 This scheme allows O(1) access to characters, providing the caller knows the byte index of the character.
 
-Rust intentionally does not allow indexing with integers, alledgedly in order to not confuse users into believing the index represent a character index instead of a byte index - but I think that's not a very convincing argument given that slicing already does work using byte indices.
+Rust intentionally does not allow indexing with integers, allegedly in order to not confuse users into believing the index represent a character index instead of a byte index - but I think that's not a very convincing argument given that slicing already does work using byte indices.
 
 ## Accessing the underlying bytes of a string
 This is done in two quite different ways in Rust and Julia that are characteristic of the languages:
@@ -189,7 +192,7 @@ First, remember the value propositions of the two languages. To put it pointedly
 * Rust treats all code as production-quality code.
   The very existence of quick and dirty code is against Rust's values, so it's no problem if Rust frustrates and hinders your attempts at prototyping - it's only protecting you from sinning.
 * Julia treats all code as prototype code, and encourages hacking.
-  The language will provide zero help with procuding code that is maintainable and robust, and if you're aiming to do so, the recommendation is simply "be disciplined".
+  The language will provide zero help you write code that is maintainable and robust, and if you're aiming to do so, the recommendation is simply "be disciplined".
 
 My argument is that the approaches taken by Rust and Julia makes sense given their respective language design goals.
 However, I believe Julia's paradigm of "UTF8 by convention" is overall the better design _in most situations_, and probably also would have been better for Rust.
@@ -203,11 +206,11 @@ How _could_ Julia behave, if we were to redesign it from scratch?
 
 One option is to have `String` constructors throw an exception when encountering invalid UTF8.
 This would, ironically, create a correctness footgun: Your code would work fine during testing, all up until the moment it (unexpectedly) hits a non-UTF8 file and crashes.
-That violates a tenant of good code: If your code crashes unexpectedly, it should be because your code is bad, not because the data you process is bad. 
+That violates a tenet of good code: If your code crashes unexpectedly, it should be because your code is bad, not because the data you process is bad. 
 Also, this approach prevents you from _actually handling non-UTF8_, because simply exiting the program when encountering non-UTF8 is not _handling_ it - you program in fact, does not work with non-UTF8.
 
 Another option is to not crash immediately when encountering non-UTF8, but defer the decision to the user. For example, Julia could return some `MaybeUTF8Bytes` object that then needs to be unwrapped to either error or get a valid UTF8 string.
-This is what Rust does. This way, it forces the user to consider the existence of other encodings (or currupted data). This has two issues:
+This is what Rust does. This way, it forces the user to consider the existence of other encodings (or corrupted data). This has two issues:
 
 * _First_, it adds extra boilerplate to your code. This might be acceptable in a language like Rust where correctness comes above all, but imagine having to unwrap maybe-strings in a REPL or a notebook when doing interactive data science. Fuck no.
 
@@ -248,7 +251,7 @@ However, in every single case I can think of, programs which read structured dat
 For example, JSON is a subset of UTF8, so when parsing JSON, you can't just check for the input being UTF8 - you would need to match the input against a much smaller set of accepted bytes which constitute valid JSON, probably using a state machine or such.
 This is also the case when dealing with CSV files, TOML files, TSV files, and every other format in existence.
 
-Practially speaking, every time you read an input file, you either only care about it as a stream of bytes, or else you need to parse it into a format which is more strict than UTF8.
+Practically speaking, every time you read an input file, you either only care about it as a stream of bytes, or else you need to parse it into a format which is more strict than UTF8.
 What kind of program could possibly take input data and requires it to be UTF8, but have no more restrictions on its input?
 There is one type of program I can think of: Functions whose output is obliged to return UTF8, because its consumer tells you it requires UTF8.
 An example would be a JSON parser, where strings in JSON format must be UTF8, but can be arbitrary UTF8.
@@ -263,20 +266,20 @@ Let me demonstrate what I mean: If you know that a string is UTF8 but _not_ anyt
 
 * Do you know at least know how to compute its printed length? No. The length of an UTF8 cannot be determined because it depends on the font, the terminal that renders it, the emoji recognized, and much more.
 
-* Okay, but then do you know how many characters the string is composed of? Also no - it's implementation dependent which groups of codepoints is recognized as extended grapheme clusters (individual characters). Also the definition of a single character is kind of fuzzy around the edges in some languages.
+* Okay, but then do you know how many characters the string is composed of? Also no - it's implementation dependent which groups of codepoints are rendered as individual characters. Also the definition of a single character is kind of fuzzy around the edges in some languages.
 * Okay, but at least you can correctly do some simple transforms of the string? I.e. you can split it by spaces, right? Well, not really - at least it's complicated. The string "ac" contains a zero-width space between the two letters. This is not classified as whitespace by convention, but it's expected that the string must be broken at space when wrapping. In contrast, "a c" contains a non-breaking space - a space where the line must not break. What about "a c"? This contains a paragraph separator and is not split according to Julia's `split`, even though it's a whitespace character. And so on and so forth.
 * Let's make it simpler. What about `.to_lowercase()`? Surely, _that_ must work correctly on UTF8? Well, no - a string being UTF8 is not enough to correctly lowercase a string. Is the lowercase of Σ σ or ς? Well, it depends. Does Σ appear as part of a formula, or as Greek prose? And, if it's Greek prose, does the letter occur at the end of a word? What about the lowercase of SS - is it ss or ß? Well, it depends on the structure of the input - is it German or Norwegian?
 
 In fact, I'm struggling with coming up with a single thing that you can correctly and consistently do with UTF8 text that you can't do with a bunch of opaque bytes - not including self-justifying reasons like "you can count the number of UTF8 codepoints in a UTF8 string".
 
-#### Preempting some arguments
+### Preempting some arguments
 > What about a tool like `cut`? In order to cut a line by, say, `\t`, you need to know how `\t` is encoded, but you don't need to know anything else. So, for a tool like `cut`, you need to know exactly that the encoding is UTF8.
 
 Yes, well, or latin1 - the most common encoding scheme after UTF8. Forcing UTF8 would incorrectly reject latin1 files.
 
 Anyway, a more important reason is: Why is `cut` used - i.e. why do you need the second tabular column? Let's say you use it to parse a two-column TSV file using a Unix pipe, like `tail file.tsv -n +2 | cut -f 2 | awk '{s += $1} END {print s}'`.
 
-Well, in that case, if the program needs to validate that it operates on well-formatted data, then _it needs to validate that the file is actually a two-column TSV file_ as is being assumed by the pipline. It's completely insufficient to just validate the input is UTF8.
+Well, in that case, if the program needs to validate that it operates on well-formatted data, then _it needs to validate that the file is actually a two-column TSV file_ as is being assumed by the pipeline. It's completely insufficient to just validate the input is UTF8.
 
 > If you have a string and don't know it's valid UTF8, simple operations like lowercasing, iterating, and checking the number of codepoints give meaningless, undefined results. This violates the principle that programs should not produce faulty results silently.
 
@@ -317,7 +320,7 @@ Julia does seem to be slowly catching up to Rust over time. For example, I used 
 Strings are carefully designed in both Rust and Julia, and while strings are implemented as 'just' a byte array in both languages, there are some small but significant differences in their designs.
 Some of the differences stem from overarching language differences - more precisely Rust's borrowchecker, and Julia's abstract types.
 
-Overall, Julia's strings are a more opaque data type that behaves in a special, priviledged manner, compared to strings in Rust. This is somewhat inevitable as Julia is not self-hosted, so the compiler has to be non-Julian at some low level.
+Overall, Julia's strings are a more opaque data type that behaves in a special, privileged manner, compared to strings in Rust. This is somewhat inevitable as Julia is not completely self-hosted[^4], so the compiler has to be non-Julian at some low level.
 
 A major design difference is that Rust strings are enforced to be valid UTF8, whereas Julia's aren't.
 I believe Julia made the better choice here overall, although Rust's extra validation fits well into the language's core values.
@@ -327,3 +330,4 @@ Other than this issue, Rust's strings are manipulated through methods with a ste
 
 [^2]: These are subject to change, as it's Julia's internals. Also, this precise pattern so far only exist in beta releases of Julia, not able stable versions. There is not currently any public API that allows allocation of uninitialized strings.
 [^3]: See the Unicode standard version 15.0, chapter 3, section C10 and D89.
+[^4]: Julia is partially self-hosted, in that a bunch of the compiler is written in Julia. Since Julia can't yet compile to static executables, it's mysterious to me how it's possible for Julia to bootstrap itself.
