@@ -58,6 +58,25 @@ by Franklin
   </atom:author>
 
 </item>
+
+<item>
+  <title>
+    <![CDATA[ Asynchronous programming in Julia ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/threads/ </link>
+  <guid> https://viralinstruction.com/posts/threads/ </guid>
+  <description>
+    <![CDATA[  An introduction to asynchronous programming in Julia.  ]]>
+  </description>
+
+  <pubDate>Sat, 08 Feb 2025 00:00:00 +0000</pubDate>
+
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+
+</item>
+
 <!--
 * items will be added here in chronological order
 * the channel will then be closed
