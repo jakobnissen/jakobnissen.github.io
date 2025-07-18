@@ -27,19 +27,15 @@ On an algorithmic level, the borrowchecker enforces a specific model, or set of 
 
 At the implementation level, the borrowchecker's current instantiation is incomplete, and often rejects programs that _adhere_ to the model of ownership, even as that model is too restrictive in the first place. 
 
-Rustaceans claim that these are all just beginner's struggles, and that once you internalize the ownership model, you will automatically structure your code to conform to the borrowchecker, making all the problems go away.
-Unfortunately, after using Rust intermittently for a few years, this hasn't been my experience yet, and [it seems I'm not alone](https://loglog.games/blog/leaving-rust-gamedev/#once-you-get-good-at-rust-all-of-these-problems-will-go-away).
-Rather, I've experienced the borrowchecker as an unending source of stumbling blocks, where a small number of woes re-appear over and over in slightly different guises.
-
-### Examples where the borrowchecker fails
 Borrowchecker frustration is like being brokenhearted - you can't easily demonstrate it, you have to suffer it yourself to understand what people are talking about.
-
 Real borrowchecker pain is not felt when your small, 20-line demonstration snippet fails to compile.
 It's when your existing project requires a small modification to ownership structure, and the borrowchecker then refuses to compile your code.
 Then, once you pull at the tiny loose fiber in your code's fabric, you find you have to unspool half your code before the borrowchecker is satisfied.
 
-Nonetheless, these tiny examples can still serve to demonstrate the borrowchecker's propensity to reject perfectly fine code.
-The most clear examples are when the borrowchecker simply doesn't do what it's supposed to, because it rejects code that doesn't conceptually violate Rust's ownership rules.
+Nonetheless, tiny examples can still serve to demonstrate the borrowchecker's propensity to reject perfectly fine code.
+
+### Examples where the borrowchecker fails
+The most clear examples are when the borrowchecker simply doesn't do what it's supposed to, because it rejects code that doesn't even violate the spirit of Rust's ownership rules.
 
 For example, consider this code I got from [a blog post](https://medium.com/@lordmoma/partial-borrowing-in-rust-the-struggle-is-real-17db9ed9be1a):
 
@@ -73,8 +69,8 @@ fn main() {
 
 This code won't compile, because the two mutable references `x_ref` and `y_ref` needs to exist simultaenously, which violates Rust's principle that a mutable reference to some data needs to unique at any point.
 
-Of course, in this case, the violation is entirely bogus, since the references point to distinct fields of the same struct, and therefore _don't_ refer to the same data.
-That nuance is lost on the borrowchecker, which prevents the code above from compiling.
+Of course, this case is a false positive, since the references point to distinct fields of the same struct, and therefore _don't_ refer to the same data.
+The borrowchecker rejects this code because the underlying rule of of the borrowchecker - namely: "Mutation requires exclusivity" is implemented _imprecisely_, such that the naunce between a reference to a field and a reference to a struct is lost.
 
 A similar, but slightly different example occurs in the code below
 
@@ -100,7 +96,7 @@ impl Collection {
 @@
 
 To the human reader, it's clear that `increment_counter` doesn't mutate `self.items`, and therefore cannot interfere with looping over the vector.
-Therefore, the maxim of the borrowchecker: "Mutation requires exclusivity" is not violated, and the code should compile fine.
+Therefore, the  of the borrowchecker: "Mutation requires exclusivity" is not violated, and the code should compile fine.
 
 Unfortunately, the borrowchecker can't reason across functions, and therefore incorrectly rejects the function.
 
@@ -129,15 +125,15 @@ This is rejected due to the two mutable references, despite the program logic gu
 There are more such [unnecessary limitations of the borrowchecker](https://blog.polybdenum.com/2024/12/21/four-limitations-of-rust-s-borrow-checker.html).
 
 ## A 'sufficiently smart borrowchecker'
-At this point, an Rust apologist might point out that these artificial limitations of the borrowchecker implementation are not fundamental, and might be lifted in the future.
+At this point, an Rust apologist might point out that, precisely because the above examples are implementation limitations, they are not fundamental, and might be lifted in the future as the implementation improves.
 There is some merit to the hope: Rust adopted so called [non-lexical lifetimes](https://blog.rust-lang.org/2022/08/05/nll-by-default/) in 2022, which did improve the borrowchecker's accuracy.
 Similarly, a new formulation of the borrowchecker, called [Polonius](https://smallcultfollowing.com/babysteps/blog/2018/04/27/an-alias-based-formulation-of-the-borrow-checker/) is in the works, which will improve accuracy still further.
 
 I remain sceptical. Polonius has been in the works for seven years now, and doesn't seem to be close to completion.
-More fundamentally, the borrowchecker will never be 'complete', because its job is to _reason_ about your code, and programs just can't do that on level that is deep enough.
+More fundamentally, the borrowchecker will never be 'complete', because its job is to _reason_ about your code, and programs just can't do that on level that is sufficiently deep.
 There is an obvious parallel with the mythical 'sufficiently smart compiler' - just like compilers continuously improve, and yet never seem to really _understand_ your code, and rarely are able to rewrite it on an algoritmic level, the borrowchecker will probably always reject seemingly obviously correct code.
 
-### The rules themselves are a problem
+### The rules themselves are unergonomical
 Above, I demonstrated limitations in the  _implementation_ of the abstract ownership model.
 However, sometimes the model itself is just wrong for your program.
 
@@ -156,7 +152,7 @@ fn main() {
 @@
 
 This is a clear-cut violation of the ownership rules: After `v` is constructed, `id` is moved into `v`, which prevents the function `main` from using `id` on the last line.
-There is a sense, then, in which the borrowchecker _ought_ to reject the program. It does fail the ownership rules.
+There is a sense, then, in which the borrowchecker - in _any_ implementation - ought to reject the program. It does fail the ownership rules.
 
 But what's the point of the rules in this case, though?
 Here, the ownership rules does not prevent use after free, or double free, or data races, or _any other bug_.
@@ -181,28 +177,36 @@ In doing so, it guarantees memory safety - and wouldn't you rather deal with com
 But that hasn't been my experience. My experience has been that borrowchecker problems are _mostly_ just bullshit - invented problems without real grounding.
 For every time I experience a bug in Python that would have been prevented in Rust by its borrowchecker, I experience maybe twenty borrowchecker issues.
 
+Another common claim is that this kind of borrowchecker frustration is merely a beginner's struggle.
+Once you internalize the ownership model of Rust,
+you will automatically structure your code to conform to the borrowchecker, making all the problems go away.
+Unfortunately, after using Rust intermittently for a few years, this hasn't been my experience yet, and [it seems I'm not alone](https://loglog.games/blog/leaving-rust-gamedev/#once-you-get-good-at-rust-all-of-these-problems-will-go-away).
+
 ### Why don't you just...
-At this point, people experienced in Rust have held their breath since the last example: "You can just derive `Clone + Copy` for `Id`!". "You can just clone the value, and the clone will be optimised away!". "You can just..."
+My examples code above may not be persuasive to experienced Rustaceans.
+They might argue that the snippets don't show there is any real ergonomic problem, because the solutions to make the snippets compile are completely trivial.
+In the last example, I could _just_ derive `Clone + Copy` for `Id`.
 
 I know.
-The commonality of these hoops is that you _can_ jump through them. You can, indeed, do work to fix whatever borrowchecker problems you have.
+The commonality of these stumbling blocks is that you _can_ jump over them. You can, indeed, do extra work to fix whatever borrowchecker problems you have.
 
-But there was never a  problem to begin with. Rust gates your _perfectly functional code_ behind a lifetime puzzle, and forces you to refactor until you've solved it.
-Rust insists your program's structure is a house of cards - change one tiny thing, and the entire thing has to scrapped, restructured, and rewritten.
-The more Rust experience I gain, the more often I suspect that is mostly just wrong. For most borrowchecker issues, the problem is not program's structure, but the largely arbitrary restrictions of Rust.
+The issue is that there was never a  problem to begin with to warrant this extra work.
+Rust gates your _perfectly functional code_ behind a lifetime puzzle, and forces you to refactor until you've solved it.
+Rust insists your program's structure is a house of cards - touch one tiny thing, and large parts of it has to scrapped and rebuilt.
+The more Rust experience I gain, the more I suspect that is usually plain wrong. For _most_ borrowchecker issues I face, the problem is not my program's structure, but the largely arbitrary restrictions of Rust.
 
-Yes, in the snippets above, the solution to the borrowchecker problems are trivial, but in larger-scale, real life code, they can be a real challenge. 
-Perversely, _because_ the lifetimes challenging, they can be _fun_.
+And sure, in the snippets above, the solution to the borrowchecker problems are trivial, but in larger-scale, real life code, they can be a real challenge. 
+Perversely, _because_ Rust's lifetime riddles are challenging, they are sort of _fun_.
 I believe that partly explains why so many people don't seem to mind them.
 Instead of thinking about how to write my code to solve the scientific problems I'm being paid to solve, I have to think about how to write it to please the borrowchecker.
-The latter is usually more tractable, have clearer requirements and is more 'puzzle-like'.
-In that sense, Rust enables _escapism_: You get to focus on the wrong, but more fun problem.
+The latter is usually more tractable, limited in scope, have clearer requirements and is more 'puzzle-like'.
+In that sense, Rust enables _escapism_: When writing Rust, you get to solve lots of 'problems' - not _real_ problems, mind you, but _fun_ problems.
 
 The usual way of obeying the borrowchecker is to refactor your code.
 Which is already unwelcome extra work, but sometimes even that is not enough.
 Let's look at some other ways people usually recommend me solving borrowchecker problems:
 
-#### Use fewer references and clone data. Or: "Just clone".
+#### Use fewer references and copy data. Or: "Just clone".
 This is generally good advice. Usually, extra allocations are fine, and the resulting performance degradation is not an issue.
 But it is a little strange that it allocations are encouraged in an otherwise performance-forcused language, not because the program logic demands it, but because the borrowchecker does.
 
@@ -233,7 +237,7 @@ Rust's reputation for bug-resistance is deserved, I think, but I believe it's du
 Like performance, correctness dies by a thousand cuts, and Rust is notable for being _consistently_ correctness-focused:
 
 * Its widespread use of enums plus exhaustive pattern matches, including for error states, makes it hard to ignore potential errors and edge cases.
-* Its heavy use of custom types to encode a lot of information in the type system, where the compiler can statically prevent mistakes.
+* Its heavy use of custom types to encode information in the type system, where the compiler can statically prevent mistakes.
 * Forced use of keyword arguments to construct structs, making it hard to switch up fields.
 * A consistent focus on, and documentation of, edge cases in function APIs.
 * Good tooling, e.g. [cargo-semver-checks](https://crates.io/crates/cargo-semver-checks), and a good built-in linter.
@@ -254,17 +258,20 @@ OCaml and Haskell are like that, and they, too, have a strong reputation for saf
 ## Okay, the borrowchecker isn't _all bad_
 As you might have noted by now, _I don't like the borrowchecker_, but even I have to grudgingly admit it has some use cases.
 
-Without a borrowchecker, you're left with either manual memory management, which is annoying and error-prone, or garbage collection[^2].
-Garbage collection (GC) also has its downsides:
+Without a borrowchecker, you're left with either manual memory management, which is annoying and error-prone, or garbage collection (GC)[^2].
+GC also has its downsides:
 
 * Marking and sweeping cause latency spikes which may be unacceptable if your program must have millisecond responsiveness.
 * GC happens intermittently, which means garbage accumulates until each collection, and so your program is
   overall less memory efficient.
 
 Those two drawbacks alone could make GC a non-starter for some applications.
+Since Rust aims to be usable for low-level applications, such as bare-metal software operating system kernels, GC is not really a viable choice.
+Those constrains are entirely valid, but it's not constrains that most software, and certainly not most _scientific_ software, are under.
+If you, like me, aren't building operating systems or programming microcontrollers, those drawbacks of GC doesn't apply.
 
-Then there is the issue of performance, which is not straightforward.
-Garbage collection has a bad reputation for performance because most GC languages like Java and Python are _otherwise_ not performance oriented.
+When comparing the borrowchecker to GC, there is also the issue of performance, which is not straightforward.
+GC has a reputation for poor performance because most GC languages like Java and Python are _otherwise_ not performance oriented.
 When non-GC languages are compared to performance oriented GC languages like Julia and Go, the gap narrows.
 And even Julia and Go are decidedly higher level and offer the programmer less control than non-GC languages like Rust or C, making the comparison somewhat confounded.
 
@@ -278,9 +285,10 @@ I've seen demonstration Julia code showing this behaviour, where manually invoki
 On the other hand, a straightforward implementation of the [binary-trees benchmark](https://benchmarksgame-team.pages.debian.net/benchmarksgame/performance/binarytrees.html)[^3]
 is several times faster in Julia than in Rust, because Julia's GC has higher throughput when run in bulk, compared to Rust's deterministic destruction which is invoked individually for each object.
    
-### And okay, it _does_ prevent some bugs
+### And okay, the borrowchecker _does_ prevent some bugs
 A garbage collector will prevent dangling pointers, use after free, and double free bugs.
 Buffer overflows are prevented by bounds checking.
+These are the main memory safety issues that Rust prevents, and it wouldn't need a borrowchecker to do so.
 
 But there _are_ some bugs that a borrowchecker is uniquely suited to prevent:
 Data races in multithreaded code are elegantly and statically prevented by Rust.
@@ -296,7 +304,7 @@ The borrowchecker's mechanism can be leveraged for some nice, seemingly unrelate
 ### Conclusion
 When coding in my day job, I switch between Julia, Python and Rust.
 I persistently experience the grass is greener on the other side of the fence: When I switch from Julia to Rust, I miss Julia's strengths.
-When I don't program in Rust, I miss the many good things that Rust offers.
+When I don't program in Rust, I miss the many good things that Rust offers:
 I miss Rust's concise enums and their exhaustive matches.
 I miss traits, and the strong guarantees they come with.
 I miss the great tooling, such as rust-analyser.
