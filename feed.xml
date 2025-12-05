@@ -66,6 +66,25 @@
 
 <item>
   <title>
+    <![CDATA[  Review: Julia trimming for Advent of Code 2025  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/aoc2025/index.html </link>
+  <guid> https://viralinstruction.com/posts/aoc2025/index.html </guid>
+  <description>
+    <![CDATA[  Trying out trimming in Julia for AoC 2025  ]]>
+  </description>  
+    
+  <pubDate>Fri, 05 Dec 2025 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Nissen</atom:name>
+  </atom:author>
+        
+</item>
+
+<item>
+  <title>
     <![CDATA[  The borrowchecker is what I like the least about Rust  ]]>
   </title>
   <link> https://viralinstruction.com/posts/borrowchecker/index.html </link>
