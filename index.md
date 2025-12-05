@@ -3,6 +3,7 @@
 Hi! I'm Jakob, a researcher-programmer working in bioinformatics. I write about scientific programming, mostly about [Julia](https://julialang.org/) and [Rust](https://www.rust-lang.org/). I also sometimes write about cool things in genomics, virology or molecular biology.
 
 # Posts
+* [Review: Julia trimming for Advent of Code 2025](/posts/aoc2025)
 * [The borrowchecker is what I like the least about Rust](/posts/borrowchecker)
 * [Asynchronous programming in Julia](/posts/threads)
 * [You probably don't need to validate UTF-8 strings](/posts/utf8)
