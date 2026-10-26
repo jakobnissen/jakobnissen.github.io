@@ -151,7 +151,7 @@ Famously, Rust's compiler enforces the concept of "ownership" - the concept that
 But Rust did not invent the concept: It's one of the central ideas underpinning object orientation, decades before Rust appeared.
 Julia the language has no concept of ownership, and yet the docstring for `FASTA.Record` says:
 
-```
+```plaintext
 │ Warning
 │
 │  Note that the ownership of data is transferred to a new record object.
@@ -182,7 +182,7 @@ To me this is a trick of words: The difficulty in figuring out how to satisfy e.
 
 Zig, of course, is not the first language to explicitly seek simplicity. Go did it before Zig, with much of the same motivation: Get the language out of the way.
 And in some way, they were successful. Go is heralded as an easy language to learn.
-But on the other hand... well, let me end on the the words of [someone else:](https://fasterthanli.me/articles/i-want-off-mr-golangs-wild-ride)
+But on the other hand... well, let me end on the words of [someone else:](https://fasterthanli.me/articles/i-want-off-mr-golangs-wild-ride)
 
 > Over and over, every piece of documentation for the Go language markets it as "simple".
 > This is a lie.

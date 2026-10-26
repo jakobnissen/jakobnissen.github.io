@@ -38,7 +38,7 @@ That certainly made me curious, so I cloned [the git repo with the Mojo code](ht
 After cloning the repo, the first step is to download and install Mojo:
 
 @@shellcode
-```plaintext
+```shell
 $ curl https://get.modular.com | sh - && \
 modular auth [MY AUTHENTICATION CODE]
 [...]
@@ -151,7 +151,7 @@ Nearly four GB/s is crazy fast. How does it do it? Let's dive into the Mojo code
 
 The `main()` function is defined as:
 
-```
+```python
 fn main() raises:
     let vars = argv()
     var parser = FastParser(vars[1], 64 * KB)
@@ -165,7 +165,7 @@ fn main() raises:
 
 Where nearly all the work happens in `FastParser.parse_all`. That is defined as
 
-```
+```python
 fn parse_all(inout self) raises:
     while True:
         self.parse_chunk(self._current_chunk, start=0, end=self._chunk_last_index)
@@ -182,7 +182,7 @@ I'm not crazy about the mandatory seeking of `fill_buffer`. This happens if ther
 
 The function `parse_chunk` parses all the reads in the current buffer. Its definition is:
 
-```plaintext
+```python
 @always_inline
 fn parse_chunk(inout self, chunk: Tensor[DType.int8], start: Int, end: Int) raises:
     let read: RecordCoord
@@ -203,7 +203,7 @@ Also note the lack of any kind of error handling here. No matter why `parse_chun
 
 Most work here happens in `parse_read` where the real parsing happens:
 
-```plaintext
+```python
 @always_inline
 fn parse_read(
     self, inout pos: Int, chunk: Tensor[DType.int8]
@@ -228,7 +228,7 @@ However, in my opinion, this lack of validation (really, lack of _parsing_ in an
 
 Anyway, `get_next_line_index` is kind of neat. First, it statically checks if SIMD is enabled. If so, it calls `find_chr_next_occurance_simd`, which is essentially an implementation of [`memchr`](https://man7.org/linux/man-pages/man3/memchr.3.html). It's implemented as:
 
-```plaintext
+```python
 @always_inline
 fn find_chr_next_occurance_simd[
     T: DType
@@ -312,7 +312,7 @@ I don't think this Mojo implementation shows any of this.
 
 ## Closing thoughts
 I don't want to coldly dismiss the Mojo blog post. After all, its two main points are essentially right: That bioinformatics needs a language to bridge high-level and high-performance programming, and that Mojo is capable of producing fast code. I don't put too much value in the actual reported numbers in the benchmark, but they don't matter in the big picture.
-It's also feels a little like overkill to go to this length to tear apart a blog post from from a guy who is just excited about what Mojo could bring to bioinformatics.
+It's also feels a little like overkill to go to this length to tear apart a blog post from a guy who is just excited about what Mojo could bring to bioinformatics.
 It's just his bad luck that there are people like me out there - a bioinformatician who is passionate about high performance computing for science, maintain my own FASTQ parsing library, and is particularly sceptical about Mojo.
 
 Introspecting, I think I'm a little oversensitive to Mojo's marketing hype. Ostensibly because the original Mojo announcements (and also this Mojo blog post), made a lot of bold claims that could be construed as hyperbolic, while keeping the compiler to themselves, giving it the smell of vaporware. But if I'm being honest with myself, it's probably because I'm so invested in the prospect of Julia for bioinformatics.
@@ -390,7 +390,7 @@ If it's really due to Mojo's groundbreaking compiler advances, why is my Julia i
 But _fine._ I downloaded a VM and installed Julia and Mojo in it.
 Hmm, but what was the CLI for the Mojo program? Let's see:
 
-```
+```shell
 $ ./fast_parser
 Segmentation fault (core dumped)
 ```
@@ -405,6 +405,6 @@ Fun fun fun. Anyway Here are my timings, all run in the same box on the later co
 So yeah, the point stands.
 
 [^1]: I've looked at commit 42ba5bc. The repository has been updated since, so the code listed in this blog post might be out of date by the time you read this.
-[^2]: I've found that when you mention that DNA is the basis of heritability, people will appear from thin air and argue about epigenetics. But I believe epigenetics is a rounding error compared to the DNA sequence when we talk about heritability and the medium of evolution. I don't doubt that e.g. chromatin accessibility is an important parameter in cells, but let's not conflate the biological state of a cell with a _heiritable signal_ which is stable enough to be acted on over evolutionary time.
+[^2]: I've found that when you mention that DNA is the basis of heritability, people will appear from thin air and argue about epigenetics. But I believe epigenetics is a rounding error compared to the DNA sequence when we talk about heritability and the medium of evolution. I don't doubt that e.g. chromatin accessibility is an important parameter in cells, but let's not conflate the biological state of a cell with a _heritable signal_ which is stable enough to be acted on over evolutionary time.
 [^3]: Some programmers wonder why DNA is usually saved encoded in plaintext. Isn't that inefficient, considering the cost of storage for terabyte-sized DNA datasets? Nope. It's usually stored gzip-compressed at decompressed on the fly when used. DNA compresses well, and the plaintext format allows extra metadata to be written directly into the file, as well as being much easier to parse. There are some more efficient formats, like CRAM, which are used in some large-scale projects, but in my subfield of microbial metagenomics, I can't recall ever having worked with a CRAM file.
 [^4]: Only partially the reason - Needletail has two more reasons it's faster. First, Rust's `memchr` crate used by Needletail is much more optimised than Julia's Automa.jl used by FASTX.jl, and Automa.jl probably can't be optimised to the same level because Julia doesn't support platform-specific SIMD code yet. Second, Rust's borrowchecker makes it safe for Needletail to return a view into the active file buffer. This would be totally reckless in Julia, so we need to copy the bytes out to a separate buffer first (we actually need to do _two copies_ of each byte, since Julia's IO is buffered by default, using an inaccessible buffer).

@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Build-time syntax highlighting for the site, see _highlight/highlight.jl",
+  "dependencies": {
+    "shiki": "4.5.0"
+  }
+}

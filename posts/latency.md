@@ -65,7 +65,7 @@ Julia methods are generic over all their arguments, so the method `g(x::Any)` is
 When you then call a function, e.g. by calling `g([5])`:
 
 @@juliacode
-```julia
+```julia-repl
 julia> g([5])
 25
 ```
@@ -73,7 +73,7 @@ julia> g([5])
 
 This is what happens:
 * First, the matching method among all the methods of `g` is found.
-  The details of how this happens is is not relevant here, [you can learn about this elsewhere](https://www.youtube.com/watch?v=gcZJkZqTxso).
+  The details of how this happens is not relevant here, [you can learn about this elsewhere](https://www.youtube.com/watch?v=gcZJkZqTxso).
 * Second, the found method, here, `g(::Any)` is monomorphized to a _methodinstance_.
   That means the compiler creates a non-generic _methodinstance_ `g(::Vector{Int})` out of the generic method `g(x::Any)` by looking at the actual, concrete types of the arguments at runtime (namely `Vector{Int}`).
 *  Then, _after_ the code has been monomorphized, and the methodinstance compiled, the methodinstance is called and its value returned. Since the methodinstance is not generic but only contains concrete types, the compiler is able to generate efficient code despite Julia being dynamic.
@@ -106,7 +106,7 @@ Unfortunately, these two optimisations conflict somewhat with having a dynamic, 
 For example, if I define the functions `f` and `g` as above, I can then redefine `f` - and `g` must still work[^1] :
 
 @@juliacode
-```julia
+```julia-repl
 julia> f(x::Int) = x + 1;
 
 julia> g([5])
@@ -116,7 +116,7 @@ julia> g([5])
 
 However, since the call to `f` was inlined into `g`, this means redefining `f` must also cause `g` to be recompiled.
 This works by having a _backedge_ from all methodinstances to all of its callers - in this case, from `f(::Int)` to `g(::Vector{Int})`.
-Redefining a method will _invalidate_ the cache entry for all of that method's methodinstances, which then invalidates all the methodinstances pointed to by their backedges, which in turn invalidates all the methodsinstances pointed to by _those methodinstances'_ backedges, and so on.
+Redefining a method will _invalidate_ the cache entry for all of that method's methodinstances, which then invalidates all the methodinstances pointed to by their backedges, which in turn invalidates all the methodinstances pointed to by _those methodinstances'_ backedges, and so on.
 
 Thus, when a method is redefined, a large number of methodinstances may need to be re-compiled, including sometimes methodinstances in the Julia language, package manager, or compiler itself, leading to latency.
 
@@ -151,7 +151,7 @@ g(x) = f(first(x))
 But now, this time, I call the method `g(::Any)` with an un-typed container: `g(Any[5])`.
 Now, the compiler has no information about the type of `first(x)`.
 The Julia IR created by the compiler for the methodinstance `g(::Vector{Any})` is:
-```
+```julia-repl
 julia> @code_typed g(Any[5])
 CodeInfo(
 1 ─ %1 = Base.arrayref(true, x, 1)::Any
@@ -234,7 +234,7 @@ Hence, if I create a package where I define a method `foo(a, b, c)`, there is no
 
 Before v1.8, package authors could add precompilation statements of the form:
 
-```
+```julia
 precompile(foo, (MyType, Int, String))
 ```
 
@@ -347,7 +347,7 @@ Yet, my data shows differently.
 This is probably why some Julia developers in various ways on various forums have been saying that latency has been reduced "by an order of magnitude", even before 1.8 - when in fact, many, perhaps _most_, packages saw latency getting worse and worse.
 
 ## The present: Where are we now?
-The most impactful changes so far has been about allowing package authors to precompile more of their their packages.
+The most impactful changes so far has been about allowing package authors to precompile more of their packages.
 With package images in v1.9, precompilation has been massively improved and is in the grand scheme of things _done_, enabling speedups that are _actually_ an order of magnitude.
 
 But the keyword here is _enabling_ - the efforts only bear fruit if package authors exploit them.

@@ -82,7 +82,7 @@ When typing e.g. `@btime 1+1`, the macro creates a closure `() -> 1+1`, then eva
 It then prints the minimum runtime and number of allocated bytes:
 
 @@juliacode
-```julia
+```julia-repl
 julia> @btime join(['a', 'b', 'c'])
   232.712 ns (4 allocations: 240 bytes)
 "abc"
@@ -98,7 +98,7 @@ For example, the function could have varying runtime, e.g. in the case of linear
 In this case, the mean or the median runtime may be more informative, and the `@benchmark` macro should be used instead. This macro reports more statistics about the running time, and even prints a histogram of timings:
 
 @@juliacode
-```julia
+```julia-repl
 julia> @benchmark findfirst(isequal(100), x) setup=(x = shuffle!(collect(1:1000)))
 BenchmarkTools.Trial: 8760 samples with 1000 evaluations.
  Range (min … max):    2.865 ns …   1.471 μs  ┊ GC (min … max): 0.00% … 0.00%
@@ -124,7 +124,7 @@ Another issue is that, because BenchmarkTools' macros create and run a closure, 
 which may optimise away all the work. For example, here:
 
 @@juliacode
-```julia
+```julia-repl
 julia> @btime sin(55.1)
   0.030 ns (0 allocations: 0 bytes)
 -0.9925515720731387
@@ -138,7 +138,7 @@ What's happening is that the compiler used constant propagation and evaluated th
 The actual code being timed was:
 
 @@juliacode
-```julia
+```julia-repl
 julia> @code_typed (() -> sin(55.1))()
 CodeInfo(
 1 ─     return -0.9925515720731387
@@ -151,7 +151,7 @@ You should see the BenchmarkTools documentation for how to handle these cases.
 This particular case can be handled by _interpolating_ the value in using `$`:
 
 @@juliacode
-```julia
+```julia-repl
 julia> @btime sin($55.1)
   9.807 ns (0 allocations: 0 bytes)
 -0.9925515720731387
@@ -180,7 +180,7 @@ The `@code_warntype` macro is used to check if some code is inferrible.
 Like other code introspection macros, you put it in front of a function call:
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> @code_warntype first(Any[1])
 MethodInstance for first(::Vector{Any})
   from first(a::AbstractArray) in Base at abstractarray.jl:398
@@ -214,7 +214,7 @@ When optimising code, the crucial part is to look for the presence of these red 
 Other non-concrete types are coloured in yellow, for example the `Union{Nothing, Int64}` in:
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> @code_warntype findfirst(isodd, [])
 MethodInstance for findfirst(::typeof(isodd), ::Vector{Any})
   from findfirst(testf::Function, A::Union{AbstractString, AbstractArray}) in Base at array.jl:2002
@@ -241,7 +241,7 @@ The `@report_opt` macro is analogous to recursively calling `@code_warntype` dow
 and printing areas of the code where type instability is detected:
 
 @@juliacode
-```julia
+```julia-repl
 julia> @report_opt foldl(+, Any[], init=0)
 ═════ 2 possible errors found ═════
 ┌ @ reduce.jl:180 Base.#foldl#245(kw..., _3, op, itr)

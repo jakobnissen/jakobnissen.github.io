@@ -6,7 +6,55 @@
   --block-background: #f8f8f8;
   --small: 12px;
   --normal: 16px;
-  --text-color: hsv(0, 0%, 20%);
+  --background: #ffffff;
+  --text-color: hsl(0, 0%, 20%);
+  --muted-color: #a6a2a0;
+  --nav-color: #1d1f21;
+  --border-color: lightgrey;
+  --table-border: black;
+  --link-color: #0000ee;
+  --link-visited-color: #5a7ad7;
+  --toc-background: #fafafa;
+  --toc-border: grey;
+  --table-head-background: #eae9f4;
+  --blockquote-border: #a8a8a8;
+  --colbox-background: #eef3f5;
+  --juliacode-background: #fff8ff;
+  --juliacode-border: purple;
+  --pythoncode-background: #f8f8ff;
+  --pythoncode-border: blue;
+  --rustcode-background: #fff8f8;
+  --rustcode-border: orange;
+  --shellcode-background: #262626;
+  /* Behind images, so plots with transparent backgrounds stay readable */
+  --image-background: transparent;
+}
+
+/* Dark mode is set by the script in head.html, and toggled in header.html */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --block-background: #2a2b2f;
+  --background: #1c1d20;
+  --text-color: #d6d6d6;
+  --muted-color: #8d8985;
+  --nav-color: #e6e6e6;
+  --border-color: #44464b;
+  --table-border: #6a6c70;
+  --link-color: #8ab4f8;
+  --link-visited-color: #b4a7f0;
+  --toc-background: #232428;
+  --toc-border: #5a5c61;
+  --table-head-background: #2e2d3a;
+  --blockquote-border: #6a6a6a;
+  --colbox-background: #1f2a30;
+  --juliacode-background: #231d27;
+  --juliacode-border: #9558b2;
+  --pythoncode-background: #1d2029;
+  --pythoncode-border: #4b8bbe;
+  --rustcode-background: #27201d;
+  --rustcode-border: #dea584;
+  --shellcode-background: #141414;
+  --image-background: #f2f2f2;
 }
 
 /* ==================================================================
@@ -27,6 +75,7 @@ html {
   font-family: DejaVu, serif;
   font-size: var(--normal);
   color: var(--text-color);
+  background: var(--background);
 }
 
 pre {
@@ -68,17 +117,17 @@ pre {
 
 .franklin-content .page-foot a {
   text-decoration: none;
-  color: #a6a2a0;
+  color: var(--muted-color);
   text-decoration: underline;
 }
 
 .page-foot {
   font-size: 80%;
   font-family: Arial, serif;
-  color: #a6a2a0;
+  color: var(--muted-color);
   text-align: center;
   margin-top: 6em;
-  border-top: 1px solid lightgrey;
+  border-top: 1px solid var(--border-color);
   padding-top: 2em;
   margin-bottom: 4em;
 }
@@ -142,14 +191,14 @@ h6 {
 
 .franklin-content h1 {
   padding-bottom: 0em;
-  border-bottom: 3px double lightgrey;
+  border-bottom: 3px double var(--border-color);
   margin-top: 1.5em;
   margin-bottom: 0em;
 }
 
 .franklin-content h2 {
   padding-bottom: 0em;
-  border-bottom: 1px solid lightgrey;
+  border-bottom: 1px solid var(--border-color);
   margin-top: 2em;
   margin-bottom: 0em;
 }
@@ -195,7 +244,7 @@ h6 {
 }
 
 .franklin-toc {
-  background-color: #fafafa;
+  background-color: var(--toc-background);
   padding-top: 5px;
   padding-right: 10px;
   padding-left: 10px;
@@ -204,19 +253,19 @@ h6 {
   margin-top: 5px;
   margin-bottom: 5px;
   border-radius: 0 10px 10px 0;
-  border: 1px solid grey;
+  border: 1px solid var(--toc-border);
 }
 
 .franklin-content th,
 td {
   font-size: var(--small);
   padding: 10px;
-  border: 1px solid black;
+  border: 1px solid var(--table-border);
 }
 
 .franklin-content blockquote {
   background: var(--block-background);
-  border-left: 7px solid #a8a8a8;
+  border-left: 7px solid var(--blockquote-border);
   margin: 1.5em 10px;
   padding: 0.5em 10px;
   font-style: italic;
@@ -246,7 +295,8 @@ td {
 }
 
 .franklin-content a {
-  text-decoration: underline; 
+  text-decoration: underline;
+  color: var(--link-color);
 }
 
 .franklin-content a:hover {
@@ -255,7 +305,7 @@ td {
 
 .franklin-content a:visited {
   text-decoration: underline;
-  color: #5a7ad7;
+  color: var(--link-visited-color);
 }
 
 /* Remove color and underlines from links in lists */ 
@@ -295,7 +345,7 @@ td {
 }
 
 .franklin-content .fndef tr {
-  border-left: 4px solid lightgray;
+  border-left: 4px solid var(--border-color);
 }
 
 .franklin-content .fndef td.fndef-backref {
@@ -318,6 +368,8 @@ td {
   width: 70%;
   text-align: center;
   padding-left: 10%;
+  background: var(--image-background);
+  background-clip: content-box;
 }
 
 .franklin-content .img-small img {
@@ -351,7 +403,7 @@ body { counter-reset: eqnum; }
 }
 
 /* ==================================================================
-    CODE & HIGHLIGHT.JS
+    CODE (highlighting is in highlight.css)
 ================================================================== */
 
 code {
@@ -371,28 +423,12 @@ code {
 
 /* font-size: 90%; } */
 
-.hljs {
-  line-height: 1.3em;
-  border-radius: 10px;
-  
-}
-
-.hljs-meta,
-.hljs-metas,
-.hljs-metap { font-weight: bold; }
-
-.hljs-meta { color: rgb(25, 179, 51); }
-
-.hljs-metas { color: red; }
-
-.hljs-metap { color: rgb(51, 131, 231); }
-
 /* ==================================================================
     BOXES
 ================================================================== */
 
 .franklin-content .colbox-blue {
-  background-color: #eef3f5;
+  background-color: var(--colbox-background);
   padding-top: 5px;
   padding-right: 10px;
   padding-left: 10px;
@@ -405,27 +441,24 @@ code {
 }
 
 .shellcode {
-  --block-background: #262626;
+  --block-background: var(--shellcode-background);
   color: #e2e2ee;
 }
 
 .juliacode {
-  --block-background: #fff8ff;
-  color: #inherit;
-  border: 1px solid purple;
+  --block-background: var(--juliacode-background);
+  border: 1px solid var(--juliacode-border);
   border-radius: 10px;
 }
 
 .pythoncode {
-  --block-background: #f8f8ff;
-  color: #inherit;
-  border: 1px solid blue;
+  --block-background: var(--pythoncode-background);
+  border: 1px solid var(--pythoncode-border);
   border-radius: 10px;
 }
 
 .rustcode {
-  --block-background: #fff8f8;
-  color: #inherit;
-  border: 1px solid orange;
+  --block-background: var(--rustcode-background);
+  border: 1px solid var(--rustcode-border);
   border-radius: 10px;
 }

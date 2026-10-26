@@ -78,7 +78,7 @@ The codons `AAA` to `UUU` are represented by the numbers 0 to 63.
 This is great news! CPUs are optimized for operating on bits of integers, so we should be able to use this fact to create _very_ efficient code for our `CodonSets`.
 
 @@juliacode
-```plaintext
+```julia
 using BioSequences
 
 struct CodonSet <: AbstractSet{RNACodon}
@@ -93,7 +93,7 @@ First two basic functions:
 The length of a `CodonSet` is the number of set bits in the integer. This can be counted using a single `popcntq` CPU instruction, available with the Base function `count_ones`:
 
 @@juliacode
-```plaintext
+```julia
 Base.length(x::CodonSet) = count_ones(x.x)
 ```
 @@
@@ -105,7 +105,7 @@ We exploit the fact that the code `x << (n & 63)` compiles to a single `shlxq` i
 We do the inverse operation for `in`, doing `x >>> (n & 63)`, and taking advantage of the built-in `isodd` function.
 
 @@juliacode
-```plaintext
+```julia
 function push(s::CodonSet, x::RNACodon)
     CodonSet(s.x | (UInt64(1) << (reinterpret(UInt64, x) & 63)))
 end
@@ -117,7 +117,7 @@ Base.in(c::RNACodon, s::CodonSet) = isodd(s.x >>> (reinterpret(UInt64, c) & 63))
 We can easily see the code it compiles to:
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> x = CodonSet(55);
 
 julia> @code_native debuginfo=:none push(x, mer"AAA"r)
@@ -142,25 +142,25 @@ This makes sense when you think about it: `btsq` is literally "bit-set quad" - i
 
 We'll also need to iterate over the elements of the set.
 Unfortunately, implementing iterators in Julia is a little tricky.
-One need to create a function that takes `iter, state` and returns `item, new_state` if the iterator is not done and `nothing` otherwise.
+One needs to create a function that takes `iter, state` and returns `item, new_state` if the iterator is not done and `nothing` otherwise.
 For iteration N, we need to return the position of the N'th least significant set bit in the integer.
 
 For this we can use the `tzcntq` CPU instruction, which is handily available in Julia through the `trailing_zeros` function, combined with the old C trick of `x & (x-1)` to clear the least significant bit:
 
 @@juliacode
-```plaintext
+```julia
 function Base.iterate(x::CodonSet, s::UInt64=x.x)
     iszero(s) ? nothing : (reinterpret(RNACodon, trailing_zeros(s)), s & (s-1))
 end
 ```
 @@
 
-These primitives allows us to implement its higher-level behaviour.
+These primitives allow us to implement its higher-level behaviour.
 For example, we of course want to be able to construct a `CodonSet` from any iterable of `RNACodon`, no matter its type.
 This can be expressed concisely using the second-order function `foldl`:
 
 @@juliacode
-```plaintext
+```julia
 CodonSet(itr) = foldl(push, itr, init=CodonSet())
 ```
 @@
@@ -169,7 +169,7 @@ CodonSet(itr) = foldl(push, itr, init=CodonSet())
 In other words, this code is equivalent to:
 
 @@juliacode
-```plaintext
+```julia
 function CodonSet(itr)
     y = CodonSet()
     for i in itr
@@ -188,7 +188,7 @@ In the internal representation, we need to take the union of the set bits in the
 This is just the bitwise or!
 
 @@juliacode
-```plaintext
+```julia
 function Base.union(a::CodonSet, b::Vararg{CodonSet})
     mapreduce(i -> i.x, |, b, init=a.x)
 end
@@ -199,10 +199,10 @@ end
 But... that's just like `union`, but with bitwise and (function `&`) instead of `|`.
 And likewise for the n-ary symmetric difference, which is bitwise xor (`⊻`).
 
-We could write this same implementation three times - or, since this in Julia, we can use use metaprogramming and write a loop which creates the code that defines all these functions in one go:
+We could write this same implementation three times - or, since this is Julia, we can use metaprogramming and write a loop which creates the code that defines all these functions in one go:
 
 @@juliacode
-```plaintext
+```julia
 for (name, f) in [(:union, |), (:intersect, &), (:symdiff, ⊻)]
     @eval function Base.$(name)(a::CodonSet, b::Vararg{CodonSet}) 
         CodonSet(mapreduce(i -> i.x, $f, b, init=a.x))
@@ -211,11 +211,11 @@ end
 ```
 @@
 
-The n-ary set complement, $A ∖ (B \cup ...)$, or `setdiff` in Julia, can be implemented using the just-defined `union`, and then a bitwise "and" and "not" instruction:
+The n-ary set complement, $A \setminus (B \cup ...)$, or `setdiff` in Julia, can be implemented using the just-defined `union`, and then a bitwise "and" and "not" instruction:
 Literally "everything in A and not in B":
 
 @@juliacode
-```plaintext
+```julia
 Base.setdiff(a::CodonSet, b::Vararg{CodonSet}) = CodonSet(a.x & ~(union(b...).x))
 ```
 @@
@@ -224,7 +224,7 @@ How does all this indirection with higher order functions like `mapfoldl` affect
 Let's check it by defining a more complicated function which uses `setdiff`, `union` (`∪`) and `symdiff` on five sets all in one:
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> f(a, b, c, d, e) = setdiff(a, b ∪ c, intersect(e, a, b));
 
 julia> @code_native debuginfo=:none g(s, s, s, s, s)
@@ -238,13 +238,13 @@ julia> @code_native debuginfo=:none g(s, s, s, s, s)
 @@
 
 The backend compiler, LLVM, inlines pretty aggressively, so we end with just two CPU instructions.
-It correctly realizes that $A ∖ ((b \cup c) \cup (e \cap a \cap b)) = A ∖ (b \cup c)$, and uses only one CPU instruction for each of these two set operations.
+It correctly realizes that $A \setminus ((b \cup c) \cup (e \cap a \cap b)) = A \setminus (b \cup c)$, and uses only one CPU instruction for each of these two set operations.
 Not bad!
 
 A few more simple methods for our type:
 
 @@juliacode
-```plaintext
+```julia
 Base.isempty(s::CodonSet) = iszero(s.x)
 Base.issubset(a::CodonSet, b::CodonSet) = isempty(setdiff(a, b))
 delete(s::CodonSet, x::RNACodon) = setdiff(s, CodonSet((x,)))
@@ -257,7 +257,7 @@ With a `CodonSet` type we can serve our users with good conscience, let's move t
 First though, we need to define the genetic code... didn't `BioSequences` already have that object?
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> dump(BioSequences.GeneticCode)
 BioSequences.GeneticCode <: AbstractDict{Mer{RNAAlphabet{2}, 3}, AminoAcid}
   name::String
@@ -270,7 +270,7 @@ We *could* use the existing `GeneticCode` object to do reverse translation, but 
 Instead, let's make a new object:
 
 @@juliacode
-```plaintext
+```julia
 const N_AA = length(alphabet(AminoAcid))
 
 struct ReverseGeneticCode <: AbstractDict{AminoAcid, CodonSet}
@@ -284,7 +284,7 @@ Since the "vector"'s length is known at compile time, and it's manageably small,
 The final translation interface we want is:
 
 @@juliacode
-```plaintext
+```julia
 Base.getindex(c::ReverseGeneticCode, a::AminoAcid) = c.sets[reinterpret(UInt8, a) + 1]
 
 function reverse_translate!(
@@ -310,7 +310,7 @@ We could pour over [a curated list of genetic codes](https://en.wikipedia.org/wi
 For each "forward" code, we traverse its internal table to get `(AminoAcid, RNACodon)` pairs, and use it to build a reverse code:
 
 @@juliacode
-```plaintext
+```julia
 function ReverseGeneticCode(x::BioSequences.GeneticCode)
     ind(aa::AminoAcid) = reinterpret(UInt8, aa) + 1
 
@@ -328,7 +328,7 @@ end
 Let's check it out:
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> reverse_translate(
     aa"SDN",
     ReverseGeneticCode(BioSequences.standard_genetic_code)
@@ -346,7 +346,7 @@ Now to make _all_ the reverse genetic codes in one loop:
 We can make a loop which inspects all variables in `BioSequences`, and, if they are `GeneticCode` objects, define a `const` equivalent reverse code with the same name with `rev_` prepended:
 
 @@juliacode
-```plaintext
+```julia
 for symbol in names(BioSequences, all=true)
     Base.isdeprecated(BioSequences, symbol) && continue
     isdefined(BioSequences, symbol) || continue
@@ -364,7 +364,7 @@ And... we're done!
 Okay, okay. Let's see what the others are:
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> setdiff(alphabet(AminoAcid),
                BioSequences.standard_genetic_code.tbl
               )
@@ -391,7 +391,7 @@ Note that this also means our reverse genetic codes are not exactly inverse of t
 We can add these two special cases to the `ReverseGeneticCode` constructor:
 
 @@juliacode
-```plaintext
+```julia
 # In constructor
     sets[ind(AA_U)] = CodonSet((mer"UGA"r,))
     sets[ind(AA_O)] = CodonSet((mer"UAG"r,))
@@ -408,7 +408,7 @@ Finally, `X` means "any amino acid".
 So, we add special cases for those in the constructor - `AA_B` clearly just reverse translates to the union of whatever `AA_D` and `AA_N` reverse translates to, and `AA_X` reverse translates to everything:
 
 @@juliacode
-```plaintext
+```julia
 # In constructor
     # Ambiguous amino acids
     for (n, (a, b)) in [(AA_B, (AA_D, AA_N)), (AA_J, (AA_I, AA_L)), (AA_Z, (AA_E, AA_Q))]
@@ -425,7 +425,7 @@ Finally, `AA_Gap` means the _absence_ of an amino acid.
 It's questionable whether an absence should _really_ be an amino acid object in `BioSequences`, in cases where one might find either something or nothing, it's usually better to store it as `Union{T, Nothing}`... but in this case, there are real use cases for encoding "no amino acid" as an `AminoAcid`. However, "no amino acid" certainly can't be reverse-translated, so we should special case it to error. To do this, we need to modify an earlier function:
 
 @@juliacode
-```plaintext
+```julia
 function Base.getindex(s::ReverseGeneticCode, a::AminoAcid)
     if reinterpret(UInt8, a) > (N_AA - 2) # cannot translate gap or invalid acid
         error("Cannot reverse translate element: ", a)
@@ -439,7 +439,7 @@ As a last treat, let's benchmark our reverse translation function:
 
 
 @@juliacode
-```plaintext
+```julia-repl
 julia> using BenchmarkTools
 
 julia> aa = randaaseq(10_000); # random AA seq

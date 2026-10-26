@@ -3,12 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // Set the theme before the page renders, to avoid a flash of the wrong theme.
+    // Use the reader's saved choice (see header.html), else follow the OS setting.
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("theme"); } catch (e) {}
+      var media = window.matchMedia("(prefers-color-scheme: dark)");
+      function apply() {
+        document.documentElement.dataset.theme = saved || (media.matches ? "dark" : "light");
+      }
+      apply();
+      media.addEventListener("change", function () {
+        try { saved = localStorage.getItem("theme"); } catch (e) {}
+        apply();
+      });
+    })();
+  </script>
   {{if hasmath}} {{insert head_katex.html }}     {{end}}
   {{if hascode}} {{insert head_highlight.html }}   {{end}}
   <link rel="stylesheet" href="/css/franklin.css">
   <link rel="stylesheet" href="/css/basic.css">
   <link rel="icon" href="/assets/v.svg">
   {{isdef title}} <title>{{fill title}}</title>  {{end}}
+  {{link_preview}}
 </head>
 <body>
   {{insert header.html}}
