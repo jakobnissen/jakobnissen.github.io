@@ -32,16 +32,28 @@ Currently, I use Julia and Python on a daily basis at work, making scientific so
 Besides this blog, I have made a few things, including:
 
 #### Python
-
 * [Vamb](https://github.com/RasmussenLab/vamb) - variational autoencoders for metagenomic binning
 
 #### Rust
-* [Alen](https://github.com/jakobnissen/alen) - simple terminal alignment viewer.
+* [alen](https://github.com/jakobnissen/alen) - simple terminal alignment viewer.
+* [samstrip](https://github.com/jakobnissen/alen) - strip data from SAM files not needed for metagenomic binning
 
 #### Julia
-* [ScanByte.jl](https://github.com/jakobnissen/ScanByte.jl) - find a byte in a chunk of memory - fast.
-* [StackCollections.jl](https://github.com/jakobnissen/StackCollections.jl) - optimized, fixed-bit collections.
-* [MinHash.jl](https://github.com/jakobnissen/MinHash.jl) - efficient, generic minhashing.
+* [BinBencher.jl](https://github.com/jakobnissen/BinBencherBackend.jl) - metagenomic binning benchmarking and analysis software
+* [BufferIO.jl](https://github.com/BioJulia/BufferIO.jl) - lower level, performant IO abstractions in Julia
+* [MemoryViews.jl](https://github.com/BioJulia/MemoryViews.jl) - low-level view into Memory in Julia
+* [BGZFLib.jl](https://github.com/BioJulia/BGZFLib.jl) - read and write BGZF files.
+* [Automa.jl](https://github.com/BioJulia/Automa.jl) - regex to Julia compiler and parser generator
 * [LibDeflate.jl](https://github.com/jakobnissen/LibDeflate.jl) - bindings to the fast de/compression library libdeflate.
-* [CodecBGZF.jl](https://github.com/jakobnissen/CodecBGZF.jl) - read and write BGZF files.
+* [BioSequences.jl](https://github.com/BioJulia/BioSequences.jl) - The BioJulia library for DNA, RNA and peptide sequences
+* [BioSymbols.jl](https://github.com/BioJulia/BioSymbols.jl) - The core DNA, RNA and amino acid type in Julia
+* [Kmers.jl](https://github.com/BioJulia/Kmers.jl) - optimized, static, integer-backed biological sequences
+* [FASTX.jl](https://github.com/BioJulia/FASTX.jl) - FASTA and FASTQ parsing in Julia
+* [StackCollections.jl](https://github.com/jakobnissen/StackCollections.jl) - optimized, fixed-bit collections.
+* [PairwiseMappingFormat.jl](https://github.com/BioJulia/PairwiseMappingFormat.jl) PAF file parser
+* [CIGARStrings.jl](https://github.com/BioJulia/CIGARStrings.jl) - Read and write CIGARs in Julia
+* [XAMAuxData.jl](https://github.com/BioJulia/XAMAuxData.jl) - read and write SAM, BAM, PAF and GFA auxiliary data
 * [ErrorTypes.jl](https://github.com/jakobnissen/ErrorTypes.jl) - Rust-like recoverable error types.
+* [MinHash.jl](https://github.com/jakobnissen/MinHash.jl) - efficient, generic minhashing.
+
+
