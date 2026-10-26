@@ -40,7 +40,7 @@ The most clear examples are when the borrowchecker simply doesn't do what it's s
 For example, consider this code I got from [a blog post](https://medium.com/@lordmoma/partial-borrowing-in-rust-the-struggle-is-real-17db9ed9be1a):
 
 @@rustcode
-```
+```rust
 struct Point {
     x: f64,
     y: f64,
@@ -67,15 +67,15 @@ fn main() {
 ```
 @@
 
-This code won't compile, because the two mutable references `x_ref` and `y_ref` needs to exist simultaenously, which violates Rust's principle that a mutable reference to some data needs to unique at any point.
+This code won't compile, because the two mutable references `x_ref` and `y_ref` need to exist simultaneously, which violates Rust's principle that a mutable reference to some data needs to be unique at any point.
 
 Of course, this case is a false positive, since the references point to distinct fields of the same struct, and therefore _don't_ refer to the same data.
-The borrowchecker rejects this code because the underlying rule of of the borrowchecker - namely: "Mutation requires exclusivity" is implemented _imprecisely_, such that the naunce between a reference to a field and a reference to a struct is lost.
+The borrowchecker rejects this code because the underlying rule of the borrowchecker - namely: "Mutation requires exclusivity" is implemented _imprecisely_, such that the nuance between a reference to a field and a reference to a struct is lost.
 
 A similar, but slightly different example occurs in the code below
 
 @@rustcode
-```
+```rust
 struct Collection {
     counter: u32,
     items: Vec<u32>,
@@ -104,7 +104,7 @@ The borrowchecker is not only overly conservative when checking loans across fun
 The following example is a famous illustration of how it can't properly reason across _branches_, either:
 
 @@rustcode
-```
+```rust
 fn get_default<'r, K: Hash + Eq + Copy, V: Default>(
     map: &'r mut HashMap<K, V>,
     key: K,
@@ -131,7 +131,7 @@ Similarly, a new formulation of the borrowchecker, called [Polonius](https://sma
 
 I remain sceptical. Polonius has been in the works for seven years now, and doesn't seem to be close to completion.
 More fundamentally, the borrowchecker will never be 'complete', because its job is to _reason_ about your code, and programs just can't do that on level that is sufficiently deep.
-There is an obvious parallel with the mythical 'sufficiently smart compiler' - just like compilers continuously improve, and yet never seem to really _understand_ your code, and rarely are able to rewrite it on an algoritmic level, the borrowchecker will probably always reject seemingly obviously correct code.
+There is an obvious parallel with the mythical 'sufficiently smart compiler' - just like compilers continuously improve, and yet never seem to really _understand_ your code, and rarely are able to rewrite it on an algorithmic level, the borrowchecker will probably always reject seemingly obviously correct code.
 
 ### The rules themselves are unergonomical
 Above, I demonstrated limitations in the  _implementation_ of the abstract ownership model.
@@ -140,7 +140,7 @@ However, sometimes the model itself is just wrong for your program.
 Consider: 
 
 @@rustcode
-```
+```rust
 struct Id(u32);
 
 fn main() {
@@ -208,7 +208,7 @@ Let's look at some other ways people usually recommend me solving borrowchecker 
 
 #### Use fewer references and copy data. Or: "Just clone".
 This is generally good advice. Usually, extra allocations are fine, and the resulting performance degradation is not an issue.
-But it is a little strange that it allocations are encouraged in an otherwise performance-forcused language, not because the program logic demands it, but because the borrowchecker does.
+But it is a little strange that it allocations are encouraged in an otherwise performance-focused language, not because the program logic demands it, but because the borrowchecker does.
 
 Of course, sometimes cloning doesn't solve the issue, because you really do need to mutate shared objects.
 
@@ -293,7 +293,7 @@ These are the main memory safety issues that Rust prevents, and it wouldn't need
 But there _are_ some bugs that a borrowchecker is uniquely suited to prevent:
 Data races in multithreaded code are elegantly and statically prevented by Rust.
 I have never written a large concurrent Rust program, and I'll grant the possibility that the borrowchecker is miraculous for that use case and easily pays for its own clunkiness.
-However, async Rust doesn't exacty [have a great reputation](https://bitbashing.io/async-rust.html).
+However, async Rust doesn't exactly [have a great reputation](https://bitbashing.io/async-rust.html).
 
 In single-threaded code, statically preventing mutation of externally held references _sounds_ like it would prevent a lot of bugs, but my experience in Julia and Python is that I rarely encounter these bugs.
 Your mileage may vary.

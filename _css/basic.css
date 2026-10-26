@@ -8,6 +8,7 @@ nav {
 }
 
 nav ul {
+  display: inline-block;
   padding-left: 0;
   margin-top: 0;
   margin-bottom: 0;
@@ -18,7 +19,7 @@ nav li {
 }
 
 nav li a {
-  color: #1d1f21;
+  color: var(--nav-color);
   text-decoration: none;
   font-size: 18px;
   font-weight: bold;
@@ -51,14 +52,48 @@ header .blog-name {
 }
 
 header .blog-name a {
-  color: #a6a2a0;
+  color: var(--muted-color);
   text-decoration: none;
 }
 
 
-#menu-icon {
+#menu-toggle {
   display: none;
+  background: none;
+  border: none;
+  padding: 4px;
+  margin-right: 10px;
+  color: var(--nav-color);
+  cursor: pointer;
+  vertical-align: top;
 }
+
+#menu-toggle svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+#theme-toggle {
+  background: none;
+  border: none;
+  padding: 10px 4px 5px 4px;
+  margin-left: 7px;
+  color: var(--nav-color);
+  cursor: pointer;
+  vertical-align: top;
+}
+
+#theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* Show the moon in light mode (click for dark), and the sun in dark mode */
+#theme-toggle .icon-sun { display: none; }
+[data-theme="dark"] #theme-toggle .icon-sun { display: block; }
+[data-theme="dark"] #theme-toggle .icon-moon { display: none; }
 
 @media (max-width: 480px) {
   header {
@@ -119,19 +154,19 @@ instead, display a burger menu.
   nav {
     display: inline-block;
     width: 27%;
+    position: relative;
   }
 
-  nav ul,
-  nav:active ul {
+  /* Dropdown below the buttons, so it doesn't cover the menu button */
+  nav ul {
     display: none;
     position: absolute;
-
-    /* padding: 20px; */
-    background: #fff;
+    top: 100%;
+    right: 10px;
+    min-width: 8em;
+    padding: 4px 0;
+    background: var(--background);
     border: 1px solid #444;
-    right: 50px;
-    top: 60px;
-    width: 30%;
     border-radius: 4px 0 4px 4px;
     z-index: 1;
   }
@@ -145,14 +180,12 @@ instead, display a burger menu.
   header li a { border-bottom: none; }
   header li a:hover { border-bottom: none; }
 
-  nav:hover ul {
+  nav.open ul {
     display: block;
   }
 
-  #menu-icon {
+  #menu-toggle {
     display: inline-block;
-    margin-right: 10px;
-    margin-top: 5px;
   }
 }
 
@@ -166,7 +199,7 @@ table {
 }
 
 tr:first-of-type {
-  background: #eae9f4;
+  background: var(--table-head-background);
 }
 
 tr:first-of-type > th {
@@ -177,9 +210,9 @@ tr,
 th,
 td {
   padding: 10px;
-  border: 1px solid lightgray;
+  border: 1px solid var(--border-color);
 }
 
 table tbody tr td {
-  border: 1px solid lightgray;
+  border: 1px solid var(--border-color);
 }

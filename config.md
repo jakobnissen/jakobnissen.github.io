@@ -2,14 +2,14 @@
 Add here global page variables to use throughout your website.
 -->
 +++
-author = "Jakob Nybo Nissen"
+author = "Jakob Nybo Andersen"
 mintoclevel = 2
 
 # Add here files or directories that should be ignored by Franklin, otherwise
 # these files might be copied and, if markdown, processed by Franklin which
 # you might not want. Indicate directories by ending the name with a `/`.
 # Base files such as LICENSE.md and README.md are ignored by default.
-ignore = ["node_modules/"]
+ignore = ["node_modules/", "_highlight/", "serve.jl", "package.json", "package-lock.json", "Project.toml", "Manifest.toml"]
 
 # RSS (the website_{title, descr, url} must be defined to get RSS)
 generate_rss = true

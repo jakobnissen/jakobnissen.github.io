@@ -23,7 +23,7 @@ Explaining UTF8 itself is outside the scope of this post, but I recommend readin
 ## Mutability
 In Julia, data types are declared as mutable or immutable types, and `String` is one of the immutable ones.
 Mutating strings requires unsafe functions[^1] and may cause undefined behaviour.
-The reason Julia strings are immutable is a question of semantics: [A string's value is identical to its content]((https://discourse.julialang.org/t/why-are-strin gs-immutable-historical-records-request/92115/5?u=jakobnissen)).
+The reason Julia strings are immutable is a question of semantics: [A string's value is identical to its content](https://discourse.julialang.org/t/why-are-strings-immutable-historical-records-request/92115/5?u=jakobnissen).
 If strings were mutable and I changed a string from "box" to "fox", it's not the _same_ string that has changed, but instead a new string that was created from the same memory, similarly to how the number 4 and the number 5 are distinct numbers, even though it's possible to mutate a piece of memory from storing a 4 to storing a 5.
 
 In Rust, it is variables and not types which are mutable or immutable, and so `String`s can be mutated though a mutable variable or reference.
@@ -62,7 +62,7 @@ Or perhaps not. The risks of accidentally stumbling into undefined behaviour ter
 The [definition of `String` in Rust](https://doc.rust-lang.org/1.78.0/src/alloc/string.rs.html#365) is pretty straightforward: 
 
 @@rustcode
-```
+```rust
 pub struct String {
     vec: Vec<u8>,
 }
@@ -73,7 +73,7 @@ The `Vec<u8>` contains the content of the string, encoded in UTF8.
 `Vec` is, of course, also implemented in Rust. If I inlined the composition of `Vec` and the composition of those structs etc, then `String` has the following layout:
 
 @@rustcode
-```
+```rust
 struct IllustrativeString {
     ptr: *u8,
     capacity: usize,
@@ -107,7 +107,7 @@ So, while the `String` type itself is opaque in Julia, luckily nearly all string
 In both Rust and Julia, you can slice into strings to get a substring. For example, here, in Julia:
 
 @@juliacode
-```
+```julia-repl
 julia> "alphabeta"[3:5]
 "pha"
 ```
@@ -117,7 +117,7 @@ These indices are byte indices and the result is a newly allocated `String` (sim
 The first and last index must be the starting bytes of characters, else you get a runtime error:
 
 @@juliacode
-```
+```julia-repl
 julia> "alpæabeta"[3:5]
 ERROR: StringIndexError: invalid index [5], valid nearby indices [4]=>'æ', [6]=>'a'
 ```
@@ -159,14 +159,14 @@ Also, the behaviour of a function that takes a single, concrete type - a slice -
 Okay, this is the big one: In Rust, strings are always valid UTF8, and attempting to create a string with invalid UTF8 will panic at runtime:
 
 @@rustcode
-```
+```rust
 fn main() {
     println!("{}", std::str::from_utf8(b"\xff\x02").unwrap());
 }
 ```
 @@
 
-```
+```plaintext
 thread 'main' panicked at src/main.rs:2:53:
 called `Result::unwrap()` on an `Err` value: Utf8Error { valid_up_to: 0, error_len: Some(1) }
 ```
@@ -174,7 +174,7 @@ called `Result::unwrap()` on an `Err` value: Utf8Error { valid_up_to: 0, error_l
 In contrast, Julia allows invalid UTF8 in strings:
 
 @@juliacode
-```
+```julia-repl
 julia> s = String(b"\xff\x02")
 "\xff\x02"
 

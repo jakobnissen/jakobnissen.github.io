@@ -15,7 +15,7 @@ Let's begin somewhere familiar: With an ordinary struct.
 A database used by my job contains "cases" who are known by identifiers like this
 
 @@plaintext
-```
+```rust
 struct CaseID_V2 {
     year: u16,
     number: u32
@@ -46,7 +46,7 @@ The same database at my work actually changed its `CaseID` in 2021, for some rea
 The old definition looked like this:
 
 @@plaintext
-```
+```rust
 struct CaseID_V1 {
     numbers: u32,
     letters: u32 // encoded in base36
@@ -60,7 +60,7 @@ We call such an either/or type a _union type_.
 In pseudocode, it could look like:
 
 @@plaintext
-```
+```rust
 union type CaseID {
     CaseID_V1,
     CaseID_V2
@@ -71,7 +71,7 @@ union type CaseID {
 And we can then put _that_ into a struct, if we want:
 
 @@plaintext
-```
+```rust
 struct Case {
     id: CaseID,
     creation: Date,
@@ -91,7 +91,7 @@ Since its values are either `CaseID_V1` or `CaseID_V2`, clearly the set of possi
 Here's a dilemma, though: What if we do this?
 
 @@plaintext
-```
+```rust
 union type MyType {
     bool,
     bool
@@ -123,7 +123,7 @@ You can't express this as a union type $T = u16 \cup u16 = u16$, because in your
 The solution is pretty straightforward: You create two new types that wrap the `u16`s, and serve as a "type tag" so the program knows how to interpret the data. Something like:
 
 @@plaintext
-```
+```rust
 struct Year_Gregorian {
     val: u16
 }
@@ -149,7 +149,7 @@ Sum types are really useful when you want to be 100% sure you can distinguish al
 Rust calls sum types "enums" (a slight misnomer). You can make pretty complicated sum types very easily:
 
 @@rustcode
-```
+```rust
 enum ComplicatedEnum {
     IsEmpty,
     Color(u8, u8, u8),
@@ -168,7 +168,7 @@ I don't think there is any big theoretical reason for this "forced wrapping" of 
 In Julia, types matches perfectly well with the idea of "types as sets of values":
 
 @@juliacode
-```
+```julia-repl
 julia> 5 isa Int # check if 5 is an instance of Int
 true
 
@@ -233,7 +233,7 @@ The intricate set operations possible with union types can also be pretty annoyi
 For example, suppose `f` is a function returning type `T`. What's the return type of this Rust code?
 
 @@rustcode
-```
+```rust
 vec![f()]
 ```
 @@
@@ -241,7 +241,7 @@ vec![f()]
 Yep, it's `Vec<T>`. Now what's the return type of this Julia code?
 
 @@juliacode
-```
+```julia
 [f()]
 ```
 @@
@@ -249,7 +249,7 @@ Yep, it's `Vec<T>`. Now what's the return type of this Julia code?
 `Vector{T}`, obviously! Right? Nope, not necessarily:
 
 @@juliacode
-```
+```julia-repl
 julia> f() = rand(Bool) ? 1 : nothing;
 
 julia> g() = [f()];

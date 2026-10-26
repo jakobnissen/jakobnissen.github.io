@@ -14,7 +14,7 @@ This post is about all the major disadvantages of Julia. Some of it will just be
 \tableofcontents
 
 ## Compile time latency
-The very first thing you learn about Julia is that it's unresponsive. You open your favorite IDE, launch a Julia REPL, start typing... and see a _noticable_ lag before any text appears. As far as first impressions go, that isn't exactly great, especially for a language touted for its speed.
+The very first thing you learn about Julia is that it's unresponsive. You open your favorite IDE, launch a Julia REPL, start typing... and see a _noticeable_ lag before any text appears. As far as first impressions go, that isn't exactly great, especially for a language touted for its speed.
 
 What's happening is that Julia is compiling the code needed for its REPL and its integration with your editor. This "runtime" compilation causes the lag we call _compile time latency_. Hence, the effect is even larger if we pull in new code from external packages: A small script that uses the packages `BioSequences` and `FASTX` may have a 2 second latency, even if the computation itself takes microseconds.
 
@@ -28,7 +28,7 @@ Well, it depends on what you use Julia for. Remember, the latency is a one-time 
 * Settings where responsiveness is key, say software in a self-driving car or airplane
 * Small composable scripts, e.g. as used in [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflows
 
-The latency also forces specific workflows for Julia users and developers. When using Python or Rust, you may be used to running some tests from command line, modifying a source file in the editor, then re-running the tests from command line until they work. This workflow is not feasible in Julia, because latency would occur every time you invoked Julia from command line. Instead, you are essentially forced to into _REPL driven development_, where you have a single Julia session you keep open alongside your editor, and interact with Julia (e.g. running tests or code analysis) only thorugh that REPL.
+The latency also forces specific workflows for Julia users and developers. When using Python or Rust, you may be used to running some tests from command line, modifying a source file in the editor, then re-running the tests from command line until they work. This workflow is not feasible in Julia, because latency would occur every time you invoked Julia from command line. Instead, you are essentially forced to into _REPL driven development_, where you have a single Julia session you keep open alongside your editor, and interact with Julia (e.g. running tests or code analysis) only through that REPL.
 
 Julias latency _is_ improving, and there _are_ hoops you can jump through to mitigate this problem somewhat. But the problem is fundamentally unsolvable, because it's built into Julia on a basic design level. So, before learning Julia, ask yourself if this is a dealbreaker for you.
 
@@ -36,7 +36,7 @@ Julias latency _is_ improving, and there _are_ hoops you can jump through to mit
 This one's pretty easy to demonstrate:
 
 @@shellcode
-```plaintext
+```shell
 $ /usr/bin/time -f "%M" julia hello_world.jl
 Hello, world!
 148724
@@ -79,7 +79,7 @@ Instability isn't just about breaking changes. It's also about bugs and incorrec
 If you doubt it, take a look at the [open issues marked as bugs](https://github.com/JuliaLang/julia/issues?q=is%3Aissue+is%3Aopen+label%3Abug). Some of these are transient bugs on master, but there are _many_, _many_ old bugs you can still go in and trigger from the REPL on the stable Julia release. Here's one [I reported about a year ago](https://github.com/JuliaLang/julia/issues/36605), and which still hasn't been fixed:
 
 @@juliacode
-```julia
+```julia-repl
 julia> open(read, "/home/jakob/Documents") # yes, a directory
 UInt8[]
 ```
@@ -88,7 +88,7 @@ UInt8[]
 Perhaps you think that reading directories as files is not really a bug, even in a high-level language. In that case, you can try collecting stateful generators:
 
 @@juliacode
-```julia
+```julia-repl
 julia> collect((i for i in Iterators.Stateful(1:3)))
 2-element Vector{Int64}:
  1
@@ -183,7 +183,7 @@ end
 
 ... and now what? What do you need to implement? What does the abstract type require? What does it guarantee? Julia offers absolutely no way of finding out what the abstract interface is, or how you conform to it. In fact, even in Base Julia, fundamental types like `AbstractSet`, `AbstractChannel`, `Number` and `AbstractFloat` are just not documented. What actually _is_ a `Number`, in Julia? I mean, we know what a number is conceptually, but what are you opting in to when you subtype `Number`? What do you promise? Who knows? Do even the core developers know? I doubt it.
 
-A few abstract types in Julia _are_ well documented, most notably `AbstractArray` and its abstract subtypes, and it's probably no coindidence that Julia's array ecosystem is so good. But this is a singular good example, not the general pattern. Ironically, this exception is often held up as an example of why the Julia type system _works well_.
+A few abstract types in Julia _are_ well documented, most notably `AbstractArray` and its abstract subtypes, and it's probably no coincidence that Julia's array ecosystem is so good. But this is a singular good example, not the general pattern. Ironically, this exception is often held up as an example of why the Julia type system _works well_.
 
 Here is a fun challenge for anyone who thinks "it can't be that bad": Try to implement a `TwoWayDict`, an `AbstractDict` where if `d[a] = b`, then `d[b] = a`. In Python, which has inheritance, this is trivial. You simply subclass `dict`, overwrite a handful of its methods, and everything else works.
 In Julia, you have to define its data layout first - of course, you can solve this by simply creating a type that simply wraps a `Dict`, but the real pain of the implementation come when you must somehow figure out everything `AbstractDict` promises (good luck!) and implement that.
@@ -197,7 +197,7 @@ Julia _does_ have traits, but they're half-baked, not supported on a language le
 
 Also, since so much of Julia's behaviour is controlled through the type of variables instead of traits, people are tempted to use wrapper types if they want type `A` to be able to behave like type `B`. But those are [a terrible idea](https://github.com/JuliaLang/julia/issues/37790), since it only moves the problem and in fact makes it worse: You now have a new wrapper type you need to implement everything for, and even if you do, the wrapper type is now of type `B`, and doesn't have access to the methods of `A`!
 
-A good example of the subtyping system not working is Julia's standard library `LinearAlgebra`. This package uses both wrapper types and traits to try to overcome the limitations of the type system, and suffers from both the workarounds. But an even clearer example of the failure of the type system is its use of _big unions_, that is, functions whose type signature has arguments of the type "A or B or C or D or E or ...". These typically appear in code when you need to add a method to an object, and then discover that the sets of types you need to implement it for doesn't fit into the type hierarchy as a single supertype. And why would it? Why is it simply assumed that behaviour is strictly [monophyletic?](https://en.wikipedia.org/wiki/Monophyly) Besides being unwieldly, unions are also un-extendable. And even in Base Julia, those unions can get out of control: If you have Julia at hand, try to type in `LinearAlgebra.StridedVecOrMat` and watch the horror. The use of such an abomination is a symptom of an unsolved underlying problem with the type system.
+A good example of the subtyping system not working is Julia's standard library `LinearAlgebra`. This package uses both wrapper types and traits to try to overcome the limitations of the type system, and suffers from both the workarounds. But an even clearer example of the failure of the type system is its use of _big unions_, that is, functions whose type signature has arguments of the type "A or B or C or D or E or ...". These typically appear in code when you need to add a method to an object, and then discover that the sets of types you need to implement it for doesn't fit into the type hierarchy as a single supertype. And why would it? Why is it simply assumed that behaviour is strictly [monophyletic?](https://en.wikipedia.org/wiki/Monophyly) Besides being unwieldy, unions are also un-extendable. And even in Base Julia, those unions can get out of control: If you have Julia at hand, try to type in `LinearAlgebra.StridedVecOrMat` and watch the horror. The use of such an abomination is a symptom of an unsolved underlying problem with the type system.
 
 The consensus on idiomatic Julia seem to be slowly drifting away from leaning on its type system to specify constraints, and towards ducktyping and traits. I essentially see this as the community implicitly beginning to acknowledge the problems of the type system and trying to avoid it where possible. All the individual gripes in the post about the system are well known, even if few people would grant the system as whole is poor. It has, however, been remarkably hard to provide good alternatives or solve the individual pain points. As Julia is maturing, there is less and less space to re-invent or enhance something as core as the type system.
 
@@ -233,7 +233,7 @@ This means that, to implement an iterator, you need to implement `iterate(x)` an
 So: Why is it like that? Well, [I'm not the only one to wonder](https://mikeinnes.github.io/2020/06/04/iterate.html). At least one of the reasons it was designed like that is that it makes the `iterate` function and the iterator itself _stateless_, since the state is stored in the local variable passed as an argument to the `iterate` function. It means you can't have bugs like this Python bug:
 
 @@pythoncode
-```python
+```python-repl
 >>> iter = (i+1 for i in range(3))
 >>> length = sum(1 for i in iter)
 >>> list(iter) # oops!
@@ -245,7 +245,7 @@ So: Why is it like that? Well, [I'm not the only one to wonder](https://mikeinne
 First, you _absolutely_ can have the same bug as in Python, because _some_ iterators _are_ stateful! For example, if you read a file:
 
 @@juliacode
-```julia
+```julia-repl
 julia> lines = eachline("my_file.txt");
 
 julia> n_lines = count(x -> true, lines);
@@ -255,7 +255,7 @@ String[]
 ```
 @@
 
-And since there is no way of knowing programatically (and certainly not statically) if an iterator is stateful, you better adopt a coding style that assumes all iterators are stateful, anyway.
+And since there is no way of knowing programmatically (and certainly not statically) if an iterator is stateful, you better adopt a coding style that assumes all iterators are stateful, anyway.
 
 To be clear, the _problem_ isn't that Julia has stateless iterators. Stateless iterators have advantages, they may in fact be superior and preferable where possible. The real problem is that _iteration is never stateless_ - in a loop, there _must_ always be state. When using stateless iterators, the problem of keeping track of the state is not solved, but simply moved elsewhere. Julia's iterators are "stateless" in the worst possible sense of the word: That the compiler and the language doesn't know about state, and therefore offloads the job of keeping track of it to the programmer. Reasoning about state across time is a famously hard problem in programming, and with Julia's iterators, you get to feel 100% of that pain.
 
@@ -270,7 +270,7 @@ end
 ```
 @@
 
-This is how Rust and Python works, approximately. Notice the code is simpler than what Julia acutally lowers to. The big advantage, however, is that the state is stored in the `itr` object, and doesn't need to be manually handled or passed around by the person implementing the iterations. Interestingly, it already solves the problem of stateful iterators that Julia's solution is meant to address, since the iterator is reset on the call to `iterator`.
+This is how Rust and Python works, approximately. Notice the code is simpler than what Julia actually lowers to. The big advantage, however, is that the state is stored in the `itr` object, and doesn't need to be manually handled or passed around by the person implementing the iterations. Interestingly, it already solves the problem of stateful iterators that Julia's solution is meant to address, since the iterator is reset on the call to `iterator`.
 
 What are the problems with passing around state with the current approach? Suppose you create an iterator that you need to process in two stages: First, you do some initialization with the first elements of the iterator. Perhaps it's an iterator of lines and you need to skip the header. After that, you iterate over the remaining arguments. You implement this as the functions `parse_header` and `parse_rest` In Julia, _you need to explicitly pass state_ between the functions as an argument - not to mention all the boilerplate code it introduces because `parse_rest` now can't use a for loop to iterate, since that would "restart" the iterator. Well, _maybe_ it would, who knows if it's stateless!
 

@@ -30,7 +30,7 @@ After having dealt with all those bullshit workarounds, moving my work to Julia 
 
 That great combination of speed and dynamism is sometimes phrased as "As easy as Python, as fast as C".
 The phrase is a little off, in my opinion - it's not really possible to have a language where you write as carelessly as you do for a casual Python script, and it still runs like optimised C code.
-Code can only ever be fast if it's written with [the contraints of computer hardware](https://viralinstruction.com/posts/hardware/) in mind, and idiomatic Python isn't.
+Code can only ever be fast if it's written with [the constraints of computer hardware](https://viralinstruction.com/posts/hardware/) in mind, and idiomatic Python isn't.
 
 A better catchphrase for Julia might be "The best expressiveness / performance tradeoff you have ever seen".
 Idiomatic Julia code remains high-level, generic and readable when being optimised - only at the most extreme optimisation, when you have to micro-optimise assembly code or manually unroll loops does the code degrade and begin to appear low-level and clunky.
@@ -152,7 +152,7 @@ For example, I use the package `OhMyREPL`, which extends the default REPL to hav
 Julia sometimes gets flak for having poor documentation. But let's compare the documentation you get in the Python REPL vs what you get in Julia:
 In Python, you have the `help` function:
 
-```
+```python-repl
 >>> help(set)
 class set(object)
  |  set() -> new empty set object
@@ -168,7 +168,7 @@ class set(object)
 Which returns characteristically terse summaries.
 Compare to Julia, which has a dedicated `help` mode in the REPL:
 
-```julia
+```julia-repl
 help?> Set
 search: Set setenv setdiff setdiff! setfield! setindex! setglobal! setrounding setproperty!
 
@@ -219,7 +219,7 @@ Unlike Python, it does not show a comprehensive list of methods.
 Remember - in Julia, methods are not tied to single classes.
 
 But then again, Julia's REPL is actually helpful, so you can simply query these from the REPL. For example, if you want to get all the methods of `Set` and its supertypes, you can use `methodswith`:
-```julia
+```julia-repl
 julia> methodswith(Set, supertypes=true)
 [1] <(a::AbstractSet, b::AbstractSet) @ Base abstractset.jl:484
 [2] <=(a::AbstractSet, b::AbstractSet) @ Base abstractset.jl:485
@@ -231,7 +231,7 @@ julia> methodswith(Set, supertypes=true)
 
 You can search for objects in Julia and all loaded packages that uses a certain string or regex in their docstring,
 simply by typing the string or regex in help mode:
-```
+```julia-repl
 help?> r" (Abstract)?Set"
 Base.KeyError
 Base.union!
@@ -242,7 +242,7 @@ Base.replace!
 ```
 
 You can also run shell commands directly from the REPL by switching to shell mode:
-```
+```julia-repl
 shell> ls
 404.md  about.md  _assets  config.md  _css  index.md  _layout  _libs  Manifest.toml  posts  Project.toml  _rss  __site  todo.md  utils.jl
 
@@ -280,7 +280,7 @@ Obviously, they find Flux's documentation lacklustre in comparison.
 ## Multithreading is easy
 In my experience, multithreading in Julia - unlike _some other dynamic languages_ - is usually as easy as slapping `@threads` in front of a `for` loop, which will cause each iteration to be scheduled in a separate thread.
 
-```julia
+```julia-repl
 julia> using Base.Threads
 julia> @threads for i in 1:16
            print(i, ',') # IO is thread-safe
@@ -293,7 +293,7 @@ Julia uses "green threading", which means the language runtime manages multiple 
 Avoiding OS-overhead makes spawning tasks lightweight, so thousands or millions can be spawned with no particular performance implications.
 For example, it takes only 4 seconds to spawn, finish and check 1 million tasks which all atomically modify the same integer:
 
-```julia
+```julia-repl
 julia> @time begin
            atom = Atomic{Int}()
            local task
@@ -324,7 +324,7 @@ In contrast, in Julia, these type operations are enforced.
 This means it's possible to, for example, assert that "this variable really _must_ be this type, even if the compiler can't do type inference here". If you're wrong, it throws an exception. If you're right, compiler will take advantage of the knowledge given by the type assert and produce more efficient code.
 
 Julia also allows you to query the compiler for types at compile time.
-Unlike third-party type checkers, the answer is guaranteed to be correct (to the extent the compiler is), and the querying can can leverage all the inference and tricks of the compiler.
+Unlike third-party type checkers, the answer is guaranteed to be correct (to the extent the compiler is), and the querying can leverage all the inference and tricks of the compiler.
 
 So, Julia has a type system quite recognisable by users of modern, static languages. At the same time, unlike most static languages, Julia does not require types to be known at compile time.
 When trying out a quick experiment, or iterating on a half-baked idea, it's completely fine to hammer out code where the compiler has no idea what is going on.
