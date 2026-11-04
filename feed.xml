@@ -39,7 +39,7 @@
   <pubDate>Wed, 04 Aug 2021 00:00:00 +0000</pubDate>
 
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
 
 </item>
@@ -57,12 +57,31 @@
   <pubDate>Sat, 08 Feb 2025 00:00:00 +0000</pubDate>
 
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
 
 </item>
 
 
+
+<item>
+  <title>
+    <![CDATA[  Cancellation in Julia 1.14  ]]>
+  </title>
+  <link> https://viralinstruction.com/posts/cancellation/index.html </link>
+  <guid> https://viralinstruction.com/posts/cancellation/index.html </guid>
+  <description>
+    <![CDATA[  How Julia&#39;s new cancellation system works.  ]]>
+  </description>  
+    
+  <pubDate>Mon, 26 Oct 2026 00:00:00 +0000</pubDate>  
+  
+  
+  <atom:author>
+    <atom:name>Jakob Nybo Andersen</atom:name>
+  </atom:author>
+        
+</item>
 
 <item>
   <title>
@@ -78,7 +97,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -97,7 +116,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -116,7 +135,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -135,7 +154,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -154,7 +173,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -173,7 +192,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -192,7 +211,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -211,7 +230,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -230,7 +249,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -249,7 +268,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -268,7 +287,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
@@ -287,7 +306,7 @@
   
   
   <atom:author>
-    <atom:name>Jakob Nybo Nissen</atom:name>
+    <atom:name>Jakob Nybo Andersen</atom:name>
   </atom:author>
         
 </item>
