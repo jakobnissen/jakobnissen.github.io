@@ -18,6 +18,10 @@ Second, I have not been part of implementing or designing this API.
 Therefore, I don't have any insider knowledge of its internals or design deliberation,
 so the content of this post comes from my own (and my AI's) inference from reading the code and the PRs to the Julia repository.
 
+@@colbox-warning
+After my post was published, there were questions raised about the soundness of cancellation's reset mechanism, and the performance penalty the cancellation machinery imposes even on code that does not use it. Therefore, cancellation will likely be removed from Julia 1.14, reassessed, and hopefully added back for Julia 1.15, if these issues can be resolved before then.
+@@
+
 ## Cancellation basics
 Put most simply, cancellation means stopping a computation before it finishes. Under such a broad definition, however, cancellation can be achieved with normal control flow. After all, what is `break` except cancelling a loop, and `return` except cancelling a function?
 
