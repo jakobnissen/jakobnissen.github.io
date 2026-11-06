@@ -65,7 +65,7 @@
 
 @font-face {
   font-family: DejaVu;
-  src: url("/assets/DejaVuSerif.woff2") format("woff2");
+  src: url("/assets/DejaVuSerif-subset.woff2") format("woff2");
 }
 
 @font-face {
